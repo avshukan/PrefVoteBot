@@ -1,4 +1,5 @@
 // https://www.npmjs.com/package/telegraf
+// https://docs.microsoft.com/ru-ru/archive/msdn-magazine/2014/june/typescript-enhance-your-javascript-investment-with-typescript
 // https://habr.com/ru/post/483660/
 
 
