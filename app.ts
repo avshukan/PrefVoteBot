@@ -1,3 +1,7 @@
+// https://www.npmjs.com/package/telegraf
+// https://habr.com/ru/post/483660/
+
+
 'use strict';
 require('dotenv').config();
 const { Context, Telegraf, Markup, session } = require('telegraf')
@@ -8,16 +12,14 @@ if (TELEGRAM_TOKEN === undefined) {
 }
 
 // interface SessionData {
-//     lastMessageId?: number
-//     photoCount?: number
-//     // ... more session data go here
-//   }
+//   lastMessageId?: number;
+//   photoCount?: number;
+// }
 
-//   // Define your own context type
-//   interface MyContext extends Context {
-//     session?: SessionData
-//     // ... more props go here
-//   }
+// Define your own context type
+// interface MyContext extends Context {
+//   session?: SessionData
+// }
 
 // Create your bot and tell it about your context type
 // const bot = new Telegraf<MyContext>('SECRET TOKEN')
@@ -25,8 +27,11 @@ const bot = new Telegraf(TELEGRAM_TOKEN);
 
 bot.use(Telegraf.log())
 
-bot.command('newpoll', (context) =>
-    context.reply('Введите название опроса')
+bot.command('newpoll', (context) => {
+    context.reply('Введите название опроса!!!');
+    console.log('Context', Context);
+    console.log('session', session);
+  }
 )
 
 bot.command('onetime', (ctx) =>
