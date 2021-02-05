@@ -2,7 +2,7 @@
   "name": "PrefVoteBot",
   "version": "1.0.0",
   "scripts": {
-    "start": "node app.ts",
+    "start": "node app.js",
     "pretest": "eslint --ignore-path .gitignore ."
   },
   "dependencies": {
