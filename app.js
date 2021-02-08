@@ -1,7 +1,7 @@
 // https://www.npmjs.com/package/telegraf
-// https://docs.microsoft.com/ru-ru/archive/msdn-magazine/2014/june/typescript-enhance-your-javascript-investment-with-typescript
 // https://habr.com/ru/post/483660/
 // https://techrocks.ru/2017/10/07/how-to-build-a-simple-telegram-bot-on-node-js/
+// https://metanit.com/web/nodejs/8.5.php
 
 'use strict';
 require('dotenv').config();
@@ -36,12 +36,6 @@ bot.use(Telegraf.log())
 let state = {};
 
 bot.command('new', context => {
-  const sql = "INSERT INTO prefvotebot_questions (name, text, owner) VALUES(?, ?, ?) ";
-  const data = ['James', 'Bond', 1];
-  pool.query(sql, data, function(err, results) {
-    if(err) console.log(err);
-    console.log(results);
-  });
   console.log('state', state);
   const userId = context.message.from.id;
   if (!state[userId])
@@ -79,6 +73,31 @@ bot.hears('✔️ Done', context => {
   if (!state[userId])
     state[userId] = { id: userId };
   state[userId].command = null;
+
+  const sql = "INSERT INTO prefvotebot_questions (name, text, owner) VALUES(?, ?, ?) ";
+  const data = [state[userId].name, state[userId].text, state[userId].id];
+
+  // pool.query(sql, data, function(err, results) {
+  //   if(err) console.log(err);
+  //   console.log(results);
+  // });
+  pool
+    .execute(sql, data)
+    .then(result => {
+      console.log(result);
+      console.log('InsertId', result.insertId);
+    })
+    .then(result => {
+      console.log(result);
+      pool.end();
+    })
+    .then(() => {
+      console.log("пул закрыт");
+    })
+    .catch(function(err) {
+      console.log(err.message);
+    });
+
   let text = `Формирование вопроса завершено!\n${state[userId].name}\n${state[userId].text}`;
   state[userId].options.forEach(element => {
     text += `\n${element}`;
