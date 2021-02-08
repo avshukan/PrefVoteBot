@@ -5,8 +5,25 @@
 
 'use strict';
 require('dotenv').config();
-const { Context, Telegraf, Markup } = require('telegraf')
-const { TELEGRAM_TOKEN } = process.env;
+const { Telegraf, Markup } = require('telegraf')
+const {
+  TELEGRAM_TOKEN,
+  MYSQL_HOSTNAME,
+  MYSQL_DATABASE,
+  MYSQL_USERNAME,
+  MYSQL_PASSWORD,
+  MYSQL_POOLSIZE
+} = process.env;
+
+const mysql = require("mysql2");
+
+const pool = mysql.createPool({
+    connectionLimit: MYSQL_POOLSIZE,
+    host: MYSQL_HOSTNAME,
+    user: MYSQL_USERNAME,
+    password: MYSQL_PASSWORD,
+    database: MYSQL_DATABASE
+});
 
 if (TELEGRAM_TOKEN === undefined) {
   throw new Error('TELEGRAM_TOKEN must be provided!')
@@ -19,13 +36,54 @@ bot.use(Telegraf.log())
 let state = {};
 
 bot.command('new', context => {
+  const sql = "INSERT INTO prefvotebot_questions (name, text, owner) VALUES(?, ?, ?) ";
+  const data = ['James', 'Bond', 1];
+  pool.query(sql, data, function(err, results) {
+    if(err) console.log(err);
+    console.log(results);
+  });
   console.log('state', state);
   const userId = context.message.from.id;
   if (!state[userId])
     state[userId] = { id: userId };
   state[userId].command = 'new';
   state[userId].subCommand = 'name';
-  return context.replyWithMarkdown('Enter name for new poll');
+  return context.replyWithMarkdown('Enter name for new poll', Markup
+    .keyboard([['✔️ Done', '❌ Cancel']])
+    .oneTime()
+    .resize()
+  )
+});
+
+bot.command('cancel', context => {
+  console.log('state', state);
+  const userId = context.message.from.id;
+  if (!state[userId])
+    state[userId] = { id: userId };
+  state[userId].command = '';
+  return context.replyWithMarkdown('New poll cancelled');
+});
+
+bot.hears('❌ Cancel', context => {
+  console.log('state', state);
+  const userId = context.message.from.id;
+  if (!state[userId])
+    state[userId] = { id: userId };
+  state[userId].command = '';
+  return context.replyWithMarkdown('New poll cancelled!!!!!!!');
+});
+
+bot.hears('✔️ Done', context => {
+  console.log('state', state);
+  const userId = context.message.from.id;
+  if (!state[userId])
+    state[userId] = { id: userId };
+  state[userId].command = null;
+  let text = `Формирование вопроса завершено!\n${state[userId].name}\n${state[userId].text}`;
+  state[userId].options.forEach(element => {
+    text += `\n${element}`;
+  });
+  context.reply(text);
 });
 
 bot.command('done', context => {
@@ -56,6 +114,11 @@ bot.on('text', context => {
         state[userId].name = text;
         state[userId].subCommand = 'question';
         context.reply('Введите текст вопроса');
+        // return context.replyWithMarkdown('Enter name for new poll', Markup
+        //   .keyboard(['/cancel'])
+        //   .oneTime()
+        //   .resize()
+        // )
         break;
       case 'question':
         state[userId].text = text;
