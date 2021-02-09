@@ -25,6 +25,8 @@ const pool = mysql.createPool({
     database: MYSQL_DATABASE
 });
 
+const promisePool = pool.promise();
+
 if (TELEGRAM_TOKEN === undefined) {
   throw new Error('TELEGRAM_TOKEN must be provided!')
 }
@@ -35,91 +37,63 @@ bot.use(Telegraf.log())
 
 let state = {};
 
-bot.command('new', context => {
+bot.command('new', commandNew);
+bot.hears('✔️ Done', hearsDone);
+bot.hears('❌ Cancel', hearsCancel);
+bot.on('text', onText);
+
+function commandNew(context) {
   console.log('state', state);
   const userId = context.message.from.id;
   if (!state[userId])
     state[userId] = { id: userId };
   state[userId].command = 'new';
   state[userId].subCommand = 'name';
-  return context.replyWithMarkdown('Enter name for new poll', Markup
-    .keyboard([['✔️ Done', '❌ Cancel']])
+  return context.replyWithMarkdown('Отправьте заголовок опроса', Markup
+    .keyboard(['❌ Cancel'])
     .oneTime()
     .resize()
-  )
-});
+  );
+}
 
-bot.command('cancel', context => {
-  console.log('state', state);
-  const userId = context.message.from.id;
-  if (!state[userId])
-    state[userId] = { id: userId };
-  state[userId].command = '';
-  return context.replyWithMarkdown('New poll cancelled');
-});
-
-bot.hears('❌ Cancel', context => {
-  console.log('state', state);
-  const userId = context.message.from.id;
-  if (!state[userId])
-    state[userId] = { id: userId };
-  state[userId].command = '';
-  return context.replyWithMarkdown('New poll cancelled!!!!!!!');
-});
-
-bot.hears('✔️ Done', context => {
+async function hearsDone(context) {
   console.log('state', state);
   const userId = context.message.from.id;
   if (!state[userId])
     state[userId] = { id: userId };
   state[userId].command = null;
 
-  const sql = "INSERT INTO prefvotebot_questions (name, text, owner) VALUES(?, ?, ?) ";
+  const sql = "INSERT INTO `prefvotebot_questions` (`Name`, `Text`, `Owner`) VALUES (?, ?, ?)";
   const data = [state[userId].name, state[userId].text, state[userId].id];
-
-  // pool.query(sql, data, function(err, results) {
-  //   if(err) console.log(err);
-  //   console.log(results);
-  // });
-  pool
-    .execute(sql, data)
-    .then(result => {
-      console.log(result);
-      console.log('InsertId', result.insertId);
-    })
-    .then(result => {
-      console.log(result);
-      pool.end();
-    })
-    .then(() => {
-      console.log("пул закрыт");
-    })
-    .catch(function(err) {
-      console.log(err.message);
-    });
+  const result = await promisePool.query(sql, data);
+  const questionId = result[0].insertId;
+  var optionSql = "INSERT INTO `prefvotebot_options` (`QuestionId`, `Name`) VALUES ?";
+  var optionValues = state[userId].options.map(element => [questionId, element]);
+  console.log('optionValues', [optionValues]);
+  const optionResult = await promisePool.query(optionSql, [optionValues]);
+  console.log('optionResult', optionResult);
 
   let text = `Формирование вопроса завершено!\n${state[userId].name}\n${state[userId].text}`;
   state[userId].options.forEach(element => {
     text += `\n${element}`;
   });
   context.reply(text);
-});
+}
 
-bot.command('done', context => {
+function hearsCancel(context) {
   console.log('state', state);
   const userId = context.message.from.id;
   if (!state[userId])
     state[userId] = { id: userId };
-  state[userId].command = null;
-  let text = `Формирование вопроса завершено!\n${state[userId].name}\n${state[userId].text}`;
-  state[userId].options.forEach(element => {
-    text += `\n${element}`;
-  });
-  context.reply(text);
-});
+  state[userId].command = '';
+  context.replyWithMarkdown('Создание опроса отменено', Markup
+    .keyboard([['/new']])
+    .oneTime()
+    .resize()
+  );
+}
 
-// handle the reaction everytime user sends a text message
-bot.on('text', context => {
+function onText(context) {
   const userId = context.message.from.id;
   const text = context.message.text;
 
@@ -132,35 +106,34 @@ bot.on('text', context => {
       case 'name':
         state[userId].name = text;
         state[userId].subCommand = 'question';
-        context.reply('Введите текст вопроса');
-        // return context.replyWithMarkdown('Enter name for new poll', Markup
-        //   .keyboard(['/cancel'])
-        //   .oneTime()
-        //   .resize()
-        // )
+        context.replyWithMarkdown('Отправьте текст вопроса', Markup
+          .keyboard(['❌ Cancel'])
+          .oneTime()
+          .resize()
+        );
         break;
       case 'question':
         state[userId].text = text;
         state[userId].options = [];
         state[userId].subCommand = 'option';
-        context.reply('Введите вариант ответа');
+        context.replyWithMarkdown('Отправьте вариант ответа', Markup
+          .keyboard(['❌ Cancel'])
+          .oneTime()
+          .resize()
+        );
         break;
       case 'option':
         state[userId].options.push(text);
-        context.reply('Введите вариант ответа');
+        context.replyWithMarkdown('Отправьте вариант ответа', Markup
+          .keyboard([['✔️ Done', '❌ Cancel']])
+          .oneTime()
+          .resize()
+        );
         break;
     }
   }
   console.log('state', state);
-});
-
-// bot.command('onetime', (ctx) =>
-//   ctx.reply('One time keyboard', Markup
-//     .keyboard(['/simple', '/inline', '/pyramid'])
-//     .oneTime()
-//     .resize()
-//   )
-// )
+}
 
 // bot.command('custom', async (ctx) => {
 //   return await ctx.reply('Custom buttons keyboard', Markup
