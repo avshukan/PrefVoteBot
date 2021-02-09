@@ -5,35 +5,35 @@
 
 'use strict';
 require('dotenv').config();
-const { Telegraf, Markup } = require('telegraf')
+const { Telegraf, Markup } = require('telegraf');
 const {
   TELEGRAM_TOKEN,
   MYSQL_HOSTNAME,
   MYSQL_DATABASE,
   MYSQL_USERNAME,
   MYSQL_PASSWORD,
-  MYSQL_POOLSIZE
+  MYSQL_POOLSIZE,
 } = process.env;
 
-const mysql = require("mysql2");
+const mysql = require('mysql2');
 
 const pool = mysql.createPool({
-    connectionLimit: MYSQL_POOLSIZE,
-    host: MYSQL_HOSTNAME,
-    user: MYSQL_USERNAME,
-    password: MYSQL_PASSWORD,
-    database: MYSQL_DATABASE
+  connectionLimit: MYSQL_POOLSIZE,
+  host: MYSQL_HOSTNAME,
+  user: MYSQL_USERNAME,
+  password: MYSQL_PASSWORD,
+  database: MYSQL_DATABASE,
 });
 
 const promisePool = pool.promise();
 
 if (TELEGRAM_TOKEN === undefined) {
-  throw new Error('TELEGRAM_TOKEN must be provided!')
+  throw new Error('TELEGRAM_TOKEN must be provided!');
 }
 
 const bot = new Telegraf(TELEGRAM_TOKEN);
 
-bot.use(Telegraf.log())
+bot.use(Telegraf.log());
 
 let state = {};
 
@@ -52,7 +52,7 @@ function commandNew(context) {
   return context.replyWithMarkdown('Отправьте заголовок опроса', Markup
     .keyboard(['❌ Cancel'])
     .oneTime()
-    .resize()
+    .resize(),
   );
 }
 
@@ -63,11 +63,11 @@ async function hearsDone(context) {
     state[userId] = { id: userId };
   state[userId].command = null;
 
-  const sql = "INSERT INTO `prefvotebot_questions` (`Name`, `Text`, `Owner`) VALUES (?, ?, ?)";
+  const sql = 'INSERT INTO `prefvotebot_questions` (`Name`, `Text`, `Owner`) VALUES (?, ?, ?)';
   const data = [state[userId].name, state[userId].text, state[userId].id];
   const result = await promisePool.query(sql, data);
   const questionId = result[0].insertId;
-  var optionSql = "INSERT INTO `prefvotebot_options` (`QuestionId`, `Name`) VALUES ?";
+  var optionSql = 'INSERT INTO `prefvotebot_options` (`QuestionId`, `Name`) VALUES ?';
   var optionValues = state[userId].options.map(element => [questionId, element]);
   console.log('optionValues', [optionValues]);
   const optionResult = await promisePool.query(optionSql, [optionValues]);
@@ -89,7 +89,7 @@ function hearsCancel(context) {
   context.replyWithMarkdown('Создание опроса отменено', Markup
     .keyboard([['/new']])
     .oneTime()
-    .resize()
+    .resize(),
   );
 }
 
@@ -102,14 +102,14 @@ function onText(context) {
   state[userId].index = 0;
 
   if (state[userId].command === 'new') {
-    switch(state[userId].subCommand) {
+    switch (state[userId].subCommand) {
       case 'name':
         state[userId].name = text;
         state[userId].subCommand = 'question';
         context.replyWithMarkdown('Отправьте текст вопроса', Markup
           .keyboard(['❌ Cancel'])
           .oneTime()
-          .resize()
+          .resize(),
         );
         break;
       case 'question':
@@ -119,7 +119,7 @@ function onText(context) {
         context.replyWithMarkdown('Отправьте вариант ответа', Markup
           .keyboard(['❌ Cancel'])
           .oneTime()
-          .resize()
+          .resize(),
         );
         break;
       case 'option':
@@ -127,7 +127,7 @@ function onText(context) {
         context.replyWithMarkdown('Отправьте вариант ответа', Markup
           .keyboard([['✔️ Done', '❌ Cancel']])
           .oneTime()
-          .resize()
+          .resize(),
         );
         break;
     }
@@ -213,8 +213,8 @@ function onText(context) {
 //   return ctx.answerCbQuery(`Oh, ${ctx.match[0]}! Great choice`)
 // })
 
-bot.launch()
+bot.launch();
 
 // Enable graceful stop
-process.once('SIGINT', () => bot.stop('SIGINT'))
-process.once('SIGTERM', () => bot.stop('SIGTERM'))
+process.once('SIGINT', () => bot.stop('SIGINT'));
+process.once('SIGTERM', () => bot.stop('SIGTERM'));

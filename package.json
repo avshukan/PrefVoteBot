@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "start": "node app.js",
-    "pretest": "eslint --ignore-path .gitignore ."
+    "lint": "eslint --ignore-path .gitignore ."
   },
   "dependencies": {
     "body-parser": "^1.16.0",
