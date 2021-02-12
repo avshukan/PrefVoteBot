@@ -1,3 +1,10 @@
+// https://medium.com/devschacht/jakob-lind-learn-redux-by-coding-a-mini-redux-d1a58e830514
+// https://medium.com/devschacht/jakob-lind-code-your-own-redux-part-2-the-connect-function-d941dc247c58
+// https://habr.com/ru/post/439104/
+// https://habr.com/ru/post/328152/
+
+
+
 class Storage {
     constructor() {
       this.state = {};
