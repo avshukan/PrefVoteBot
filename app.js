@@ -64,13 +64,15 @@ bot.hears('❌ Cancel', hearsCancel);
 bot.hears('👁 Results', hearsResults);
 bot.on('text', onText);
 
+
+
 function commandNew(context) {
   console.log('state', state);
   const userId = context.message.from.id;
   if (!state[userId])
     state[userId] = { id: userId };
   state[userId].command = 'new';
-  state[userId].subCommand = 'name';
+  state[userId].subCommand = 'header';
   return context.replyWithMarkdown('Отправьте заголовок опроса', Markup
     .keyboard(['❌ Cancel'])
     .oneTime()
@@ -78,41 +80,60 @@ function commandNew(context) {
   );
 }
 
+
+
 async function start(context) {
   const userId = context.message.from.id;
   if (!state[userId])
     state[userId] = { id: userId };
-  state[userId].command = 'vote';
-  state[userId].subCommand = '';
   console.log('start context', context);
-  const pollId = context.startPayload;
-  console.log('context.startPayload', context.startPayload);
-  console.log('pollId', pollId);
-  const questionSQL = 'SELECT * FROM `prefvotebot_questions` WHERE `Id` = ?';
-  const [questionRow] = await promisePool.execute(questionSQL, [pollId]);
-  console.log('questionRow', questionRow);
-  const optioinsSQL = 'SELECT * FROM `prefvotebot_options` WHERE `QuestionId` = ?';
-  const dataSQL = [pollId];
-  const [optionsRows] = await promisePool.execute(optioinsSQL, dataSQL);
-  console.log('optionsRows', optionsRows);
+  if (context.startPayload === '') {
+    return;
+  }
+  const questionId = parseInt(context.startPayload);
+  state[userId].questionId = questionId;
+
+  const checkSQL = 'SELECT * FROM `prefvotebot_statuses` WHERE `QuestionId` = ? AND `User` = ?';
+  const [checkRow] = await promisePool.execute(checkSQL, [questionId, state[userId].id]);
+  console.log('checkRow', checkRow);
+  if (checkRow.length === 0) {
+    state[userId].command = 'vote';
+    state[userId].subCommand = '';
+  } else if (checkRow[0].Status === 'ANSWERED') {
+    hearsResults(context);
+  }
 
 
-  state[userId].pollId = pollId;
-  state[userId].name = questionRow[0].Name;
-  state[userId].text = questionRow[0].Text;
-  state[userId].options = optionsRows;
-  state[userId].optionsSelected = [];
-  state[userId].mid = [];
+  if (state[userId].command = 'vote') {
+    console.log('questionId', questionId);
+    const questionSQL = 'SELECT * FROM `prefvotebot_questions` WHERE `Id` = ?';
+    const [questionRow] = await promisePool.execute(questionSQL, [questionId]);
+    console.log('questionRow', questionRow);
+    const optioinsSQL = 'SELECT * FROM `prefvotebot_options` WHERE `QuestionId` = ?';
+    const dataSQL = [questionId];
+    const [optionsRows] = await promisePool.execute(optioinsSQL, dataSQL);
+    console.log('optionsRows', optionsRows);
 
-  const text = `${state[userId].name}\n${state[userId].text}`;
-  const buttons = optionsRows.map(option => option.Name);
-  const voteMessageId = await context.replyWithMarkdown(text, Markup
-    .keyboard([...buttons.map(button => [button]), ['❌ Cancel']])
-    .oneTime()
-    .resize(),
-  );
-  state[userId].voteMessageId = voteMessageId;
+
+    // state[userId].questionId = questionId;
+    state[userId].header = questionRow[0].Header;
+    state[userId].text = questionRow[0].Text;
+    state[userId].options = optionsRows;
+    state[userId].optionsSelected = [];
+    state[userId].mid = [];
+
+    const text = `${state[userId].header}\n${state[userId].text}`;
+    const buttons = optionsRows.map(option => option.Name);
+    const voteMessageId = await context.replyWithMarkdown(text, Markup
+      .keyboard([...buttons.map(button => [button]), ['❌ Cancel']])
+      .oneTime()
+      .resize(),
+    );
+    state[userId].voteMessageId = voteMessageId;
+  }
 }
+
+
 
 async function hearsDone(context) {
   console.log('state', state);
@@ -121,10 +142,11 @@ async function hearsDone(context) {
     state[userId] = { id: userId };
   state[userId].command = null;
 
-  const sql = 'INSERT INTO `prefvotebot_questions` (`Name`, `Text`, `Owner`) VALUES (?, ?, ?)';
-  const data = [state[userId].name, state[userId].text, state[userId].id];
+  const sql = 'INSERT INTO `prefvotebot_questions` (`Header`, `Text`, `Owner`) VALUES (?, ?, ?)';
+  const data = [state[userId].header, state[userId].text, state[userId].id];
   const result = await promisePool.query(sql, data);
   const questionId = result[0].insertId;
+  state[userId].questionId = questionId;
   var optionSql = 'INSERT INTO `prefvotebot_options` (`QuestionId`, `Name`) VALUES ?';
   var optionValues = state[userId].options.map(element => [questionId, element]);
   console.log('optionValues', [optionValues]);
@@ -132,9 +154,9 @@ async function hearsDone(context) {
   console.log('optionResult', optionResult);
 
 
-  const text = `Опрос **${state[userId].name}** сформирован!\n'
-    + 'Принять участие можно по ссылке\n'
-    + 'https://telegram.me/prefVoteBot?start=${questionId}`;
+  const text = `Опрос ** ${state[userId].header} ** сформирован!\n`
+    + `Принять участие можно по ссылке\n`
+    + `https://telegram.me/prefVoteBot?start=${questionId}`;
   // state[userId].options.forEach(element => {
   //   text += `\n${element}`;
   // });
@@ -150,9 +172,9 @@ async function hearsResults(context) {
     state[userId] = { id: userId };
   state[userId].command = null;
 
-const QuestionId = 30;
+const questionId = state[userId].questionId;
 const optsql = `SELECT * FROM prefvotebot_options WHERE QuestionId = ?`;
-const optdata = [QuestionId];
+const optdata = [questionId];
 const [optrows] = await promisePool.query(optsql, optdata);
 const optionsList = optrows.map(item => item.Id);
 // const optionsList = [36, 37];
@@ -175,10 +197,9 @@ ON r1.User = r2.User
 GROUP BY
 	r1.OptionId,
 	r2.OptionId`;
-  const data = [QuestionId, QuestionId];
+  const data = [questionId, questionId];
   const [rows, fields] = await promisePool.query(sql, data);
-  console.log('result rows', rows)
-  context.replyWithMarkdown('result');
+  console.log('result rows', rows);
 
   const d = [];
   const p = [];
@@ -261,13 +282,15 @@ GROUP BY
   console.log('optionsRating', optionsRating);
 
   const optionsResult = optionsRating
-    .sort((item1, item2) => (item1.place < item2.place))
+    .sort((item1, item2) => item1.place - item2.place)
     .map(item => {
-      const place = (item.place + 1);
+      const position = (item.count === 1)
+        ? (item.place + 1)
+        : `${item.place + 1}-${item.place + item.count}`;
       const name = optrows.filter(row => row.Id === item.id)[0].Name;
-      return `${place}. ${name}`;
+      return `${position}. ${name}`;
     })
-  let replyText = '';
+  let replyText = 'Результаты опроса:\n';
   optionsResult.forEach(option => replyText += `${option}\n`);
   context.replyWithMarkdown(replyText, Markup
     .keyboard([['/new']])
@@ -316,8 +339,8 @@ async function onText(context) {
 
   if (state[userId].command === 'new') {
     switch (state[userId].subCommand) {
-      case 'name':
-        state[userId].name = text;
+      case 'header':
+        state[userId].header = text.substr(0, 63);
         state[userId].subCommand = 'question';
         context.replyWithMarkdown('Отправьте текст вопроса', Markup
           .keyboard(['❌ Cancel'])
@@ -326,7 +349,7 @@ async function onText(context) {
         );
         break;
       case 'question':
-        state[userId].text = text;
+        state[userId].text = text.substr(0, 255);;
         state[userId].options = [];
         state[userId].subCommand = 'option';
         context.replyWithMarkdown('Отправьте вариант ответа', Markup
@@ -336,7 +359,7 @@ async function onText(context) {
         );
         break;
       case 'option':
-        state[userId].options.push(text);
+        state[userId].options.push(text.substr(0, 100));
         context.replyWithMarkdown('Отправьте вариант ответа', Markup
           .keyboard([['✔️ Done', '❌ Cancel']])
           .oneTime()
@@ -350,7 +373,7 @@ async function onText(context) {
     const optionIndex = state[userId].options.findIndex(option => option.Name === text);
     console.log('onText optionIndex', optionIndex);
     if (optionIndex === -1) {
-      const text = `Простите, такого значения нет в списке вариантов\n** ${state[userId].name} **\n${state[userId].text}`;
+      const text = `Простите, такого значения нет в списке вариантов\n** ${state[userId].header} **\n${state[userId].text}`;
       const buttons = state[userId].options.map(option => [option.Name]);
       const mid = await context.replyWithMarkdown(text, Markup
         .keyboard([...buttons.map(button => [button]), ['❌ Cancel']])
@@ -367,7 +390,7 @@ async function onText(context) {
         await context.deleteMessage(context.message.message_id);
         const del = await context.deleteMessage(state[userId].voteMessageId.message_id);
         console.log('del', del);
-        let text = `${state[userId].name}\n${state[userId].text}\nВы уже выбрали:`;
+        let text = `${state[userId].header}\n${state[userId].text}\nВы уже выбрали:`;
         state[userId].optionsSelected.forEach((option, index) => {
           text += `\n${index + 1}. ${option.Name}`;
         });
@@ -391,7 +414,12 @@ async function onText(context) {
         const saveSql = 'INSERT INTO `prefvotebot_ranks` (`QuestionId`, `OptionId`, `Rank`, `User`) VALUES ?';
         const saveResult = await promisePool.query(saveSql, [saveData]);
         console.log('saveResult', saveResult);
-        let text = `Вы завершили опрос * ${state[userId].name} * \nВаш выбор:`;
+
+        const statusSql = 'INSERT INTO `prefvotebot_statuses` (`QuestionId`, `User`, `Status`) VALUES (?, ?, ?)';
+        const statusResult = await promisePool.query(statusSql, [state[userId].questionId, state[userId].id, 'ANSWERED']);
+        console.log('statusResult', statusResult);
+
+        let text = `Вы завершили опрос * ${state[userId].header} * \nВаш выбор:`;
         state[userId].optionsSelected.forEach((option, index) => {
           text += `\n${index + 1}. ${option.Name}`;
         });
