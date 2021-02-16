@@ -131,7 +131,7 @@ function botReducer(state = {}, action) {
               parse_mode: 'HTML',
               ...Markup
                 .keyboard([['/new']])
-                  .resize()
+                .resize()
             });
         }
         return { updatedState: state, handler };
