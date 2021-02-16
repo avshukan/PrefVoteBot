@@ -25,6 +25,8 @@ const pool = mysql.createPool({
 });
 
 const promisePool = pool.promise();
+const createDBStorage = require('./storage');
+const storage = createDBStorage(promisePool);
 
 function botReducer(state = {}, action) {
     let handler = () => {};
@@ -43,20 +45,28 @@ function botReducer(state = {}, action) {
           const questionId = parseInt(context.startPayload);
           state[userId].questionId = questionId;
 
-          const checkSQL = 'SELECT * FROM `prefvotebot_statuses` WHERE `QuestionId` = ? AND `User` = ?';
-          const [checkRow] = await promisePool.execute(checkSQL, [questionId, state[userId].id]);
-          console.log('checkRow', checkRow);
-          if (checkRow.length === 0) {
+          // const checkSQL = 'SELECT * FROM `prefvotebot_statuses` WHERE `QuestionId` = ? AND `User` = ?';
+          // const [checkRow] = await promisePool.execute(checkSQL, [questionId, state[userId].id]);
+          // console.log('checkRow', checkRow);
+          // if (checkRow.length === 0) {
+          //   state[userId].command = 'vote';
+          //   state[userId].subCommand = '';
+          // } else if (checkRow[0].Status === 'ANSWERED') {
+          //   console.log('hears result this', this);
+          //   // hearsResults(context);
+          //   const x = botReducer(state, {type: 'HEARS RESULTS'});
+          //   console.log('x', x);
+          //   x.handler(context);
+          // }
+          const status = await storage.getQuestionStatus(questionId, state[userId].id);
+          if (status === 'ANSWERED') {
+            console.error('status answered');
+            botReducer(state, {type: 'HEARS RESULTS'}).handler(context);
+          } else {
+            console.error('status not answered');
             state[userId].command = 'vote';
             state[userId].subCommand = '';
-          } else if (checkRow[0].Status === 'ANSWERED') {
-            console.log('hears result this', this);
-            // hearsResults(context);
-            const x = botReducer(state, {type: 'HEARS RESULTS'});
-            console.log('x', x);
-            x.handler(context);
           }
-
 
           if (state[userId].command === 'vote') {
             console.log('questionId', questionId);
@@ -265,7 +275,9 @@ function botReducer(state = {}, action) {
               optionsResult.forEach(option => replyText += `${option}\n`);
               context.reply(replyText, {
                 parse_mode: 'HTML',
-                ...Markup.keyboard([['/new']])
+                ...Markup
+                  .keyboard([['/new']])
+                    .resize()
               })
               // context.replyWithMarkdown(replyText, Markup
               //   .keyboard([['/new']])
