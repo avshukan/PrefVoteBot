@@ -5,6 +5,7 @@
 
 'use strict';
 require('dotenv').config();
+const { method } = require('./method');
 const { Markup } = require('telegraf');
 const {
   MYSQL_HOSTNAME,
@@ -30,64 +31,34 @@ const storage = createDBStorage(promisePool);
 
 function botReducer(state = {}, action) {
     let handler = () => {};
-    console.log('bot reducer', this);
-    console.log('bot reducer state', state);
     switch (action.type) {
       case 'START':
         handler = async function(context) {
           const userId = context.message.from.id;
           if (!state[userId])
             state[userId] = { id: userId };
-          console.log('start context', context);
           if (context.startPayload === '') {
             return;
           }
           const questionId = parseInt(context.startPayload);
           state[userId].questionId = questionId;
-
-          // const checkSQL = 'SELECT * FROM `prefvotebot_statuses` WHERE `QuestionId` = ? AND `User` = ?';
-          // const [checkRow] = await promisePool.execute(checkSQL, [questionId, state[userId].id]);
-          // console.log('checkRow', checkRow);
-          // if (checkRow.length === 0) {
-          //   state[userId].command = 'vote';
-          //   state[userId].subCommand = '';
-          // } else if (checkRow[0].Status === 'ANSWERED') {
-          //   console.log('hears result this', this);
-          //   // hearsResults(context);
-          //   const x = botReducer(state, {type: 'HEARS RESULTS'});
-          //   console.log('x', x);
-          //   x.handler(context);
-          // }
           const status = await storage.getQuestionStatus(questionId, state[userId].id);
           if (status === 'ANSWERED') {
-            console.error('status answered');
-            botReducer(state, {type: 'HEARS RESULTS'}).handler(context);
+            botReducer(state, { type: 'HEARS RESULTS' }).handler(context);
           } else {
-            console.error('status not answered');
             state[userId].command = 'vote';
             state[userId].subCommand = '';
           }
 
           if (state[userId].command === 'vote') {
-            console.log('questionId', questionId);
-            const questionSQL = 'SELECT * FROM `prefvotebot_questions` WHERE `Id` = ?';
-            const [questionRow] = await promisePool.execute(questionSQL, [questionId]);
-            console.log('questionRow', questionRow);
-            const optioinsSQL = 'SELECT * FROM `prefvotebot_options` WHERE `QuestionId` = ?';
-            const dataSQL = [questionId];
-            const [optionsRows] = await promisePool.execute(optioinsSQL, dataSQL);
-            console.log('optionsRows', optionsRows);
-
-
-            // state[userId].questionId = questionId;
-            state[userId].header = questionRow[0].Header;
-            state[userId].text = questionRow[0].Text;
-            state[userId].options = optionsRows;
+            const questionWithOptions = await storage.getQuestionWithOptions(questionId);
+            state[userId].header = questionWithOptions.header;
+            state[userId].text = questionWithOptions.text;
+            state[userId].options = questionWithOptions.options;
             state[userId].optionsSelected = [];
             state[userId].mid = [];
-
             const text = `${state[userId].header}\n${state[userId].text}`;
-            const buttons = optionsRows.map(option => option.Name);
+            const buttons = state[userId].options.map(option => option.Name);
             const voteMessageId = await context.replyWithMarkdown(text, Markup
               .keyboard([...buttons.map(button => [button]), ['❌ Cancel']])
               .oneTime()
@@ -95,222 +66,98 @@ function botReducer(state = {}, action) {
             );
             state[userId].voteMessageId = voteMessageId;
           }
-
         }
         return { updatedState: state, handler };
 
-        case 'NEW COMMAND':
-          handler = function(context) {
-            console.log('reducer state', state);
-            const userId = context.message.from.id;
-            if (!state[userId])
-              state[userId] = { id: userId };
-            state[userId].command = 'new';
-            state[userId].subCommand = 'header';
-            return context.replyWithMarkdown('Отправьте заголовок опроса', Markup
-              .keyboard(['❌ Cancel'])
-              .oneTime()
-              .resize(),
-            );
-          }
-          return { updatedState: state, handler };
+      case 'NEW COMMAND':
+        handler = function(context) {
+          const userId = context.message.from.id;
+          if (!state[userId])
+            state[userId] = { id: userId };
+          state[userId].command = 'new';
+          state[userId].subCommand = 'header';
+          return context.replyWithMarkdown('Отправьте заголовок опроса', Markup
+            .keyboard(['❌ Cancel'])
+            .oneTime()
+            .resize(),
+          );
+        }
+        return { updatedState: state, handler };
 
-        case 'HEARS DONE':
-          handler = async function(context) {
+      case 'HEARS DONE':
+        handler = async function(context) {
+          const userId = context.message.from.id;
+          if (!state[userId])
+            state[userId] = { id: userId };
+          state[userId].command = null;
+          const questionId = await storage.saveQuestionWithOptions({
+            userId: state[userId].id,
+            header: state[userId].header,
+            text: state[userId].text,
+            options: state[userId].options
+          })
+          const text = `Опрос ** ${state[userId].header} ** сформирован!\n`
+            + `Принять участие можно по ссылке\n`
+            + `https://telegram.me/prefVoteBot?start=${questionId}`;
+          context.replyWithMarkdown(text);
+        }
+        return { updatedState: state, handler };
+
+      case 'HEARS RESULTS':
+        handler = async function(context) {
             console.log('state', state);
             const userId = context.message.from.id;
             if (!state[userId])
               state[userId] = { id: userId };
             state[userId].command = null;
 
-            const sql = 'INSERT INTO `prefvotebot_questions` (`Header`, `Text`, `Owner`) VALUES (?, ?, ?)';
-            const data = [state[userId].header, state[userId].text, state[userId].id];
-            const result = await promisePool.query(sql, data);
-            const questionId = result[0].insertId;
-            state[userId].questionId = questionId;
-            var optionSql = 'INSERT INTO `prefvotebot_options` (`QuestionId`, `Name`) VALUES ?';
-            var optionValues = state[userId].options.map(element => [questionId, element]);
-            console.log('optionValues', [optionValues]);
-            const optionResult = await promisePool.query(optionSql, [optionValues]);
-            console.log('optionResult', optionResult);
-
-
-            const text = `Опрос ** ${state[userId].header} ** сформирован!\n`
-              + `Принять участие можно по ссылке\n`
-              + `https://telegram.me/prefVoteBot?start=${questionId}`;
-            // state[userId].options.forEach(element => {
-            //   text += `\n${element}`;
-            // });
-            context.replyWithMarkdown(text);
-          }
-          return { updatedState: state, handler };
-
-        case 'HEARS RESULTS':
-          handler = async function(context) {
-              console.log('state', state);
-              const userId = context.message.from.id;
-              if (!state[userId])
-                state[userId] = { id: userId };
-              state[userId].command = null;
-
             const questionId = state[userId].questionId;
-            const optsql = `SELECT * FROM prefvotebot_options WHERE QuestionId = ?`;
-            const optdata = [questionId];
-            const [optrows] = await promisePool.query(optsql, optdata);
+            const optrows = await storage.getOptions(questionId);
             const optionsList = optrows.map(item => item.Id);
-            // const optionsList = [36, 37];
-
-              const sql = `SELECT
-              r1.OptionId Option1,
-              r2.OptionId Option2,
-              SUM(CASE WHEN r1.Rank < r2.Rank THEN 1 ELSE 0 END) K
-            FROM (
-              SELECT *
-              FROM prefvotebot_ranks
-              WHERE QuestionId = ?
-            ) r1
-            INNER JOIN (
-              SELECT *
-              FROM prefvotebot_ranks
-              WHERE QuestionId = ?
-            ) r2
-            ON r1.User = r2.User
-            GROUP BY
-              r1.OptionId,
-              r2.OptionId`;
-              const data = [questionId, questionId];
-              const [rows, fields] = await promisePool.query(sql, data);
-              console.log('result rows', rows);
-
-              const d = [];
-              const p = [];
-              optionsList.forEach(option1 => {
-                d[option1] = [];
-                optionsList.forEach(option2 => {
-                  d[option1][option2] = 0;
-                });
-              });
-              optionsList.forEach(option1 => {
-                p[option1] = [];
-                optionsList.forEach(option2 => {
-                  p[option1][option2] = 0;
-                });
-              });
-
-              console.log('d', d);
-              rows.forEach(row => d[row.Option1][row.Option2] = parseInt(row.K));
-              console.log('d', d);
-
-              console.log('p start', p);
-
-              for (let i = 0; i < optionsList.length; i++) {
-                for (let j = 0; j < optionsList.length; j++) {
-                  if (i !== j) {
-                    if (d[optionsList[i]][optionsList[j]] > d[optionsList[j]][optionsList[i]]) {
-                      p[optionsList[i]][optionsList[j]] = d[optionsList[i]][optionsList[j]];
-                    } else {
-                      p[optionsList[i]][optionsList[j]] = 0;
-                    }
-                  }
-                }
-              }
-
-              console.log('p continue', p);
-
-              for (let i = 0; i < optionsList.length; i++) {
-                for (let j = 0; j < optionsList.length; j++) {
-                  if (i !== j) {
-                    for (let k = 0; k < optionsList.length; k++) {
-                      if (i !== k && j !== k) {
-                        p[optionsList[j]][optionsList[k]] = Math.max(
-                          p[optionsList[j]][optionsList[k]],
-                          Math.min(
-                            p[optionsList[j]][optionsList[i]],
-                            p[optionsList[i]][optionsList[k]]
-                          )
-                        );
-                      }
-                    }
-                  }
-                }
-              }
-
-              console.log('p end', p);
-
-              const optionsMarks = [];
-              for (let i = 0; i < optionsList.length; i++) {
-                optionsMarks[optionsList[i]] = 0;
-                for (let j = 0; j < optionsList.length; j++) {
-                  if (p[optionsList[i]][optionsList[j]] > p[optionsList[j]][optionsList[i]]) {
-                    optionsMarks[optionsList[i]] += 2;
-                  } else if (p[optionsList[i]][optionsList[j]] > p[optionsList[j]][optionsList[i]]) {
-                    optionsMarks[optionsList[i]] += 1;
-                  }
-                }
-              }
-              console.log('optionsMarks', optionsMarks);
-
-              const optionsRating = optionsList.map(option => {
-                const result = {
-                  id: option,
-                  mark: optionsMarks[option],
-                  place: optionsMarks.filter(item => (item > optionsMarks[option])).length,
-                  count: optionsMarks.filter(item => (item === optionsMarks[option])).length,
-                };
-                return result;
+            const rows = await storage.getRanks(questionId)
+            const optionsRating = method(optionsList, rows)
+            const optionsResult = optionsRating
+              .sort((item1, item2) => item1.place - item2.place)
+              .map(item => {
+                const position = (item.count === 1)
+                  ? (item.place + 1)
+                  : `${item.place + 1}-${item.place + item.count}`;
+                const name = optrows.filter(row => row.Id === item.id)[0].Name;
+                return `${position}. ${name}`;
               })
-
-              console.log('optionsRating', optionsRating);
-
-              const optionsResult = optionsRating
-                .sort((item1, item2) => item1.place - item2.place)
-                .map(item => {
-                  const position = (item.count === 1)
-                    ? (item.place + 1)
-                    : `${item.place + 1}-${item.place + item.count}`;
-                  const name = optrows.filter(row => row.Id === item.id)[0].Name;
-                  return `${position}. ${name}`;
-                })
-              let replyText = '<b>Результаты опроса</b>:\n';
-              optionsResult.forEach(option => replyText += `${option}\n`);
-              context.reply(replyText, {
-                parse_mode: 'HTML',
-                ...Markup
-                  .keyboard([['/new']])
-                    .resize()
-              })
-              // context.replyWithMarkdown(replyText, Markup
-              //   .keyboard([['/new']])
-              //   .oneTime()
-              //   .resize(),
-              // );
-          }
-          return { updatedState: state, handler };
-
-        case 'HEARS CANCEL':
-          console.log('hears cancel 1 state', state);
-          handler = function(context) {
-              console.log('hears cancel 2 state', state);
-              const userId = context.message.from.id;
-              if (!state[userId])
-                state[userId] = { id: userId };
-              let replyText = '-';
-              switch (state[userId].command) {
-                case 'new':
-                  replyText = 'Создание опроса отменено';
-                  break;
-                case 'vote':
-                  replyText = 'Участие в опросе прервано';
-                  break;
-              };
-              state[userId].command = '';
-              context.replyWithMarkdown(replyText, Markup
+            let replyText = '<b>Результаты опроса</b>:\n';
+            optionsResult.forEach(option => replyText += `${option}\n`);
+            context.reply(replyText, {
+              parse_mode: 'HTML',
+              ...Markup
                 .keyboard([['/new']])
-                .oneTime()
-                .resize(),
-              );
-          }
-          return { updatedState: state, handler };
+                  .resize()
+            });
+        }
+        return { updatedState: state, handler };
+
+      case 'HEARS CANCEL':
+        handler = function(context) {
+            const userId = context.message.from.id;
+            if (!state[userId])
+              state[userId] = { id: userId };
+            let replyText = '-';
+            switch (state[userId].command) {
+              case 'new':
+                replyText = 'Создание опроса отменено';
+                break;
+              case 'vote':
+                replyText = 'Участие в опросе прервано';
+                break;
+            };
+            state[userId].command = '';
+            context.replyWithMarkdown(replyText, Markup
+              .keyboard([['/new']])
+              .oneTime()
+              .resize(),
+            );
+        }
+        return { updatedState: state, handler };
 
       case 'NEW MESSAGE':
         handler = async function(context) {
@@ -392,19 +239,15 @@ function botReducer(state = {}, action) {
               const selectedOption = state[userId].options.pop();
               console.log('last option', selectedOption);
               state[userId].optionsSelected.push(selectedOption);
-              console.log('state[userId].optionsSelected all', state[userId].optionsSelected);
-              const saveData = state[userId].optionsSelected.map((option, index) => {
-                  return [option.QuestionId, option.Id, index + 1, userId];
+              await storage.saveRanks({
+                userId: userId,
+                options: state[userId].optionsSelected
+              })
+              await storage.saveStatus({
+                userId: state[userId].id,
+                questionId: state[userId].questionId,
+                status: 'ANSWERED'
               });
-              console.log('saveData', saveData);
-
-              const saveSql = 'INSERT INTO `prefvotebot_ranks` (`QuestionId`, `OptionId`, `Rank`, `User`) VALUES ?';
-              const saveResult = await promisePool.query(saveSql, [saveData]);
-              console.log('saveResult', saveResult);
-
-              const statusSql = 'INSERT INTO `prefvotebot_statuses` (`QuestionId`, `User`, `Status`) VALUES (?, ?, ?)';
-              const statusResult = await promisePool.query(statusSql, [state[userId].questionId, state[userId].id, 'ANSWERED']);
-              console.log('statusResult', statusResult);
 
               let text = `Вы завершили опрос * ${state[userId].header} * \nВаш выбор:`;
               state[userId].optionsSelected.forEach((option, index) => {
@@ -420,9 +263,6 @@ function botReducer(state = {}, action) {
           }
 
           }
-          console.log('onText state', state);
-          console.log('onText state mid', state[userId].mid);
-          console.log('onText state optionsSelected', state[userId].optionsSelected);
         }
         return { updatedState: state, handler };
 
