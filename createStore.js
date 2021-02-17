@@ -1,6 +1,6 @@
 'use strict';
+
 function createStore(storeReducer, storeState = {}) {
-  console.log('createStore', this);
   let state = storeState;
 
   function dispatch(action) {

@@ -35,24 +35,6 @@ if (TELEGRAM_TOKEN === undefined) {
   throw new Error('TELEGRAM_TOKEN must be provided!');
 }
 
-
-// class VoteContext extends Context {
-//   constructor(update, telegram, options) {
-//     console.log('Creating context for %j', update)
-//     super(update, telegram, options)
-//     this.userId = update.message.from.id;
-//     this.x = 'xxx';
-//     console.log('this', this);
-//   }
-
-//   reply(...args) {
-//     // console.log('reply called with args: %j', args)
-//     console.log('reply this', this)
-//     return super.reply(...args)
-//   }
-// }
-
-// const bot = new Telegraf(TELEGRAM_TOKEN, { contextType: VoteContext })
 const bot = new Telegraf(TELEGRAM_TOKEN);
 
 bot.use(Telegraf.log());
@@ -65,7 +47,6 @@ const store = createStore(botReducer, initialState);
 
 bot.start(store.dispatch({ type: 'START' }));
 bot.command('new', store.dispatch({ type: 'NEW COMMAND' }));
-// bot.hears('✔️ Done', store.dispatch({ type: 'HEARS DONE' }))
 bot.hears('✔️ Done', hearsDoneHandler(store, storage));
 bot.hears('❌ Cancel', store.dispatch({ type: 'HEARS CANCEL' }));
 bot.hears('👁 Results', store.dispatch({ type: 'HEARS RESULTS' }));

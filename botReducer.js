@@ -67,43 +67,9 @@ function botReducer(state = {}, action) {
 
 
       case 'HEARS DONE':
-        handler = async function(context) {
-          const userId = context.message.from.id;
-          if (!state[userId])
-            state[userId] = { id: userId };
-          state[userId].command = null;
-          const questionId = await storage.saveQuestionWithOptions({
-            userId: state[userId].id,
-            header: state[userId].header,
-            text: state[userId].text,
-            options: state[userId].options
-          })
-          const text = `Опрос ** ${state[userId].header} ** сформирован!\n`
-            + `Принять участие можно по ссылке\n`
-            + `https://telegram.me/prefVoteBot?start=${questionId}`;
-          context.replyWithMarkdown(text);
-        }
-        return { updatedState: state, handler };
-
-
-        case 'HEARS DONE 2':
-          handler = async function(context) {
-            const userId = context.message.from.id;
-            if (!state[userId])
-              state[userId] = { id: userId };
-            state[userId].command = null;
-            const questionId = await storage.saveQuestionWithOptions({
-              userId: state[userId].id,
-              header: state[userId].header,
-              text: state[userId].text,
-              options: state[userId].options
-            })
-            const text = `Опрос ** ${state[userId].header} ** сформирован!\n`
-              + `Принять участие можно по ссылке\n`
-              + `https://telegram.me/prefVoteBot?start=${questionId}`;
-            context.replyWithMarkdown(text);
-          }
-          return { updatedState: state, handler };
+        const { userId, questionId, header, text, options, reply } = action.payload;
+        state[userId] = { id: userId, command: null, questionId, header, text, options, reply };
+        return state;
 
 
 
@@ -270,7 +236,8 @@ function botReducer(state = {}, action) {
         }
         return { updatedState: state, handler };
 
-      default: state;
+      default:
+        return state;
     }
   }
 
