@@ -16,6 +16,8 @@ const {
   // MYSQL_PASSWORD,
   // MYSQL_POOLSIZE,
 } = process.env;
+const createDBStorage = require('./storage');
+const storage = createDBStorage();
 
 // const mysql = require('mysql2');
 
@@ -58,11 +60,13 @@ bot.use(Telegraf.log());
 const initialState = {};
 const botReducer = require('./botReducer');
 const createStore = require('./createStore');
+const { hearsDoneHandler } = require('./botHandlers');
 const store = createStore(botReducer, initialState);
 
 bot.start(store.dispatch({ type: 'START' }));
 bot.command('new', store.dispatch({ type: 'NEW COMMAND' }));
-bot.hears('✔️ Done', store.dispatch({ type: 'HEARS DONE' }));
+// bot.hears('✔️ Done', store.dispatch({ type: 'HEARS DONE' }))
+bot.hears('✔️ Done', hearsDoneHandler(store, storage));
 bot.hears('❌ Cancel', store.dispatch({ type: 'HEARS CANCEL' }));
 bot.hears('👁 Results', store.dispatch({ type: 'HEARS RESULTS' }));
 bot.on('text', store.dispatch({ type: 'NEW MESSAGE' }));

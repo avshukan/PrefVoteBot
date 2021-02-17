@@ -4,30 +4,10 @@
 // https://habr.com/ru/post/328152/
 
 'use strict';
-require('dotenv').config();
 const { method } = require('./method');
 const { Markup } = require('telegraf');
-const {
-  MYSQL_HOSTNAME,
-  MYSQL_DATABASE,
-  MYSQL_USERNAME,
-  MYSQL_PASSWORD,
-  MYSQL_POOLSIZE,
-} = process.env;
-
-const mysql = require('mysql2');
-
-const pool = mysql.createPool({
-  connectionLimit: MYSQL_POOLSIZE,
-  host: MYSQL_HOSTNAME,
-  user: MYSQL_USERNAME,
-  password: MYSQL_PASSWORD,
-  database: MYSQL_DATABASE,
-});
-
-const promisePool = pool.promise();
 const createDBStorage = require('./storage');
-const storage = createDBStorage(promisePool);
+const storage = createDBStorage();
 
 function botReducer(state = {}, action) {
     let handler = () => {};
@@ -84,6 +64,8 @@ function botReducer(state = {}, action) {
         }
         return { updatedState: state, handler };
 
+
+
       case 'HEARS DONE':
         handler = async function(context) {
           const userId = context.message.from.id;
@@ -102,6 +84,28 @@ function botReducer(state = {}, action) {
           context.replyWithMarkdown(text);
         }
         return { updatedState: state, handler };
+
+
+        case 'HEARS DONE 2':
+          handler = async function(context) {
+            const userId = context.message.from.id;
+            if (!state[userId])
+              state[userId] = { id: userId };
+            state[userId].command = null;
+            const questionId = await storage.saveQuestionWithOptions({
+              userId: state[userId].id,
+              header: state[userId].header,
+              text: state[userId].text,
+              options: state[userId].options
+            })
+            const text = `Опрос ** ${state[userId].header} ** сформирован!\n`
+              + `Принять участие можно по ссылке\n`
+              + `https://telegram.me/prefVoteBot?start=${questionId}`;
+            context.replyWithMarkdown(text);
+          }
+          return { updatedState: state, handler };
+
+
 
       case 'HEARS RESULTS':
         handler = async function(context) {

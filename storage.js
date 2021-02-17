@@ -1,6 +1,27 @@
 'use strict';
-function createDBStorage(pool) {
-  let _pool = pool;
+require('dotenv').config();
+const {
+  MYSQL_HOSTNAME,
+  MYSQL_DATABASE,
+  MYSQL_USERNAME,
+  MYSQL_PASSWORD,
+  MYSQL_POOLSIZE,
+} = process.env;
+
+const mysql = require('mysql2');
+
+const pool = mysql.createPool({
+  connectionLimit: MYSQL_POOLSIZE,
+  host: MYSQL_HOSTNAME,
+  user: MYSQL_USERNAME,
+  password: MYSQL_PASSWORD,
+  database: MYSQL_DATABASE,
+});
+
+const promisePool = pool.promise();
+
+function createDBStorage() {
+  let _pool = promisePool;
 
   async function getQuestionStatus(questionId, userId) {
     const sql = 'SELECT * FROM `prefvotebot_statuses` WHERE `QuestionId` = ? AND `User` = ?';
