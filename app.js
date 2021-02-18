@@ -42,18 +42,10 @@ bot.use(Telegraf.log());
 const initialState = {};
 const botReducer = require('./botReducer');
 const createStore = require('./createStore');
-// const {
-//   startHandler,
-//   commandNewHandler,
-//   hearsCancelHandler,
-//   hearsDoneHandler,
-//   hearsResultsHandler,
-// } = require('./botHandlers');
 const store = createStore(botReducer, initialState);
 const botHandlers = require('./botHandlers');
 const handlers = botHandlers(store, storage);
 
-// bot.start(store.dispatch({ type: 'START' }));
 bot.start(handlers.startHandler());
 bot.command('new', handlers.commandNewHandler());
 bot.hears('❌ Cancel', handlers.hearsCancelHandler());

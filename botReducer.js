@@ -11,7 +11,7 @@ const storage = createDBStorage();
 function botReducer(state = {}, action) {
   let handler = () => { };
   switch (action.type) {
-    case 'VOTE' : {
+    case 'VOTE': {
       const {
         userId,
         questionId,
@@ -21,7 +21,7 @@ function botReducer(state = {}, action) {
         optionsSelected,
         mid,
         reply,
-        voteMessageId
+        voteMessageId,
       } = action.payload;
       console.log('VOTE action', action);
       state[userId] = {
@@ -35,48 +35,10 @@ function botReducer(state = {}, action) {
         optionsSelected,
         mid,
         reply,
-        voteMessageId
+        voteMessageId,
       };
       return state;
     }
-
-
-    // case 'START':
-    //   handler = async function(context) {
-    //     const userId = context.message.from.id;
-    //     if (!state[userId])
-    //       state[userId] = { id: userId };
-    //     if (context.startPayload === '') {
-    //       return;
-    //     }
-    //     const questionId = parseInt(context.startPayload, 10);
-    //     state[userId].questionId = questionId;
-    //     const status = await storage.getQuestionStatus(questionId, state[userId].id);
-    //     if (status === 'ANSWERED') {
-    //       botReducer(state, { type: 'HEARS RESULTS' }).handler(context);
-    //     } else {
-    //       state[userId].command = 'vote';
-    //       state[userId].subCommand = '';
-    //     }
-
-    //     if (state[userId].command === 'vote') {
-    //       const questionWithOptions = await storage.getQuestionWithOptions(questionId);
-    //       state[userId].header = questionWithOptions.header;
-    //       state[userId].text = questionWithOptions.text;
-    //       state[userId].options = questionWithOptions.options;
-    //       state[userId].optionsSelected = [];
-    //       state[userId].mid = [];
-    //       const text = `${state[userId].header}\n${state[userId].text}`;
-    //       const buttons = state[userId].options.map(option => option.Name);
-    //       const voteMessageId = await context.replyWithMarkdown(text, Markup
-    //         .keyboard([...buttons.map(button => [button]), ['❌ Cancel']])
-    //         .oneTime()
-    //         .resize(),
-    //       );
-    //       state[userId].voteMessageId = voteMessageId;
-    //     }
-    //   };
-    //   return { updatedState: state, handler };
 
 
     case 'NEW COMMAND': {
@@ -100,7 +62,7 @@ function botReducer(state = {}, action) {
     }
 
 
-    case 'HEARS RESULT': {
+    case 'HEARS RESULTS': {
       const { userId, questionId } = action.payload;
       state[userId] = { id: userId, command: null, questionId };
       return state;

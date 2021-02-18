@@ -10,7 +10,7 @@ function createStore(storeReducer, storeState = {}) {
       action.type === 'VOTE' ||
       action.type === 'NEW COMMAND' ||
       action.type === 'HEARS DONE' ||
-      action.type === 'HEARS RESULT' ||
+      action.type === 'HEARS RESULTS' ||
       action.type === 'HEARS CANCEL'
     ) {
       state = storeReducer(state, action);

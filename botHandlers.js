@@ -8,11 +8,9 @@ function botHandlers(initStore, initStorage) {
   let storage = initStorage;
 
   function startHandler() {
-    return async function(context) {
+    return async function (context) {
       const userId = context.message.from.id;
-      const userState = store.getUserState(userId);
-      console.log('userId', userId);
-      console.log('context', context);
+      // const userState = store.getUserState(userId);
       if (context.startPayload === '') {
         console.log('context.startPayload === \'\' => return;')
         return;
@@ -24,8 +22,6 @@ function botHandlers(initStore, initStorage) {
         const payload = { userId, questionId };
         const action = { type, payload };
         store.dispatch(action);
-        console.log('botReducer(state, { type: \'HEARS RESULTS\' }).handler(context);');
-        // botReducer(state, { type: 'HEARS RESULTS' }).handler(context);
         await hearsResultsHandler()(context);
       } else {
         const questionWithOptions = await storage.getQuestionWithOptions(questionId);
@@ -58,7 +54,7 @@ function botHandlers(initStore, initStorage) {
   }
 
   function commandNewHandler() {
-    return async function(context) {
+    return async function (context) {
       const userId = context.message.from.id;
       const reply = 'Отправьте заголовок опроса';
       const type = 'NEW COMMAND';
@@ -73,15 +69,15 @@ function botHandlers(initStore, initStorage) {
       context.reply(reply, {
         parse_mode: 'HTML',
         ...Markup
-        .keyboard(['❌ Cancel'])
-        .oneTime()
-        .resize(),
+          .keyboard(['❌ Cancel'])
+          .oneTime()
+          .resize(),
       });
     };
   }
 
   function hearsCancelHandler() {
-    return async function(context) {
+    return async function (context) {
       const userId = context.message.from.id;
       const userState = store.getUserState(userId);
       const { command } = userState;
@@ -109,7 +105,7 @@ function botHandlers(initStore, initStorage) {
   }
 
   function hearsDoneHandler() {
-    return async function(context) {
+    return async function (context) {
       const userId = context.message.from.id;
       const userState = store.getUserState(userId);
       const { header, text, options } = userState;
@@ -126,10 +122,9 @@ function botHandlers(initStore, initStorage) {
   }
 
   function hearsResultsHandler() {
-    return async function(context) {
+    return async function (context) {
       const userId = context.message.from.id;
       const userState = store.getUserState(userId);
-      console.log('result userstate', userState);
       const { questionId, header, text } = userState;
       const optrows = await storage.getOptions(questionId);
       const rows = await storage.getRanks(questionId);
@@ -146,7 +141,7 @@ function botHandlers(initStore, initStorage) {
         });
       let reply = `Опрос <b>${header}</b>\n${text}\n\nРезультат:\n`;
       optionsResult.forEach(option => reply += `${option}\n`);
-      const type = 'HEARS RESULT';
+      const type = 'HEARS RESULTS';
       const payload = { userId, questionId };
       const action = { type, payload };
       store.dispatch(action);
