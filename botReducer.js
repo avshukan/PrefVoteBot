@@ -49,20 +49,11 @@ function botReducer(state = {}, action) {
       return { updatedState: state, handler };
 
 
-    case 'NEW COMMAND':
-      handler = function(context) {
-        const userId = context.message.from.id;
-        if (!state[userId])
-          state[userId] = { id: userId };
-        state[userId].command = 'new';
-        state[userId].subCommand = 'header';
-        return context.replyWithMarkdown('Отправьте заголовок опроса', Markup
-          .keyboard(['❌ Cancel'])
-          .oneTime()
-          .resize(),
-        );
-      };
-      return { updatedState: state, handler };
+    case 'NEW COMMAND': {
+      const { userId, command, subCommand, reply } = action.payload;
+      state[userId] = { id: userId, command, subCommand, reply };
+      return state;
+    }
 
 
     case 'HEARS CANCEL': {

@@ -3,6 +3,29 @@
 const { Markup } = require('telegraf');
 const { method } = require('./method');
 
+function commandNewHandler(store, storage) {
+  return async function(context) {
+    const userId = context.message.from.id;
+    const reply = 'Отправьте заголовок опроса';
+    const type = 'NEW COMMAND';
+    const payload = {
+      userId,
+      command: 'new',
+      subCommand: 'header',
+      reply
+    };
+    const action = { type, payload };
+    store.dispatch(action);
+    context.reply(reply, {
+      parse_mode: 'HTML',
+      ...Markup
+      .keyboard(['❌ Cancel'])
+      .oneTime()
+      .resize(),
+     });
+  };
+}
+
 function hearsCancelHandler(store, storage) {
   return async function(context) {
     const userId = context.message.from.id;
@@ -78,6 +101,7 @@ function hearsResultsHandler(store, storage) {
 }
 
 module.exports = {
+  commandNewHandler,
   hearsCancelHandler,
   hearsDoneHandler,
   hearsResultsHandler,

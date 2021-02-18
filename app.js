@@ -43,6 +43,7 @@ const initialState = {};
 const botReducer = require('./botReducer');
 const createStore = require('./createStore');
 const {
+  commandNewHandler,
   hearsCancelHandler,
   hearsDoneHandler,
   hearsResultsHandler,
@@ -50,7 +51,8 @@ const {
 const store = createStore(botReducer, initialState);
 
 bot.start(store.dispatch({ type: 'START' }));
-bot.command('new', store.dispatch({ type: 'NEW COMMAND' }));
+// bot.command('new', store.dispatch({ type: 'NEW COMMAND' }));
+bot.command('new', commandNewHandler(store, storage));
 bot.hears('❌ Cancel', hearsCancelHandler(store, storage));
 bot.hears('✔️ Done', hearsDoneHandler(store, storage));
 bot.hears('👁 Results', hearsResultsHandler(store, storage));

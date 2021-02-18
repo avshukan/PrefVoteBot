@@ -10,10 +10,10 @@ function createStore(storeReducer, storeState = {}) {
       action.type === 'HEARS DONE' ||
       action.type === 'HEARS RESULT' ||
       action.type === 'HEARS CANCEL' ||
-      action.type === 'HEARS CANCEL 2'
+      action.type === 'NEW COMMAND'
     ) {
       state = storeReducer(state, action);
-      console.log('dispatch state after (hears done|result 2)', state);
+      console.log('dispatch state after (handler)', state);
     } else {
       const { updatedState, handler } = storeReducer(state, action);
       state = updatedState;
