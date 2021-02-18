@@ -1,4 +1,5 @@
 'use strict';
+const { ACTION_HEARS_CANCEL, ACTION_HEARS_DONE, ACTION_HEARS_RESULTS } = require('./action_consts');
 
 function createStore(storeReducer, storeState = {}) {
   let state = storeState;
@@ -11,7 +12,10 @@ function createStore(storeReducer, storeState = {}) {
       action.type === 'NEW COMMAND' ||
       action.type === 'HEARS DONE' ||
       action.type === 'HEARS RESULTS' ||
-      action.type === 'HEARS CANCEL'
+      action.type === 'HEARS CANCEL' ||
+      action.type === ACTION_HEARS_CANCEL ||
+      action.type === ACTION_HEARS_DONE ||
+      action.type === ACTION_HEARS_RESULTS
     ) {
       state = storeReducer(state, action);
       console.log('dispatch state after (handler)', state);

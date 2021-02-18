@@ -1,5 +1,6 @@
 'use strict';
 
+const { ACTION_HEARS_CANCEL, ACTION_HEARS_DONE, ACTION_HEARS_RESULTS } = require('./action_consts');
 const { Markup } = require('telegraf');
 const { method } = require('./method');
 
@@ -18,7 +19,7 @@ function botHandlers(initStore, initStorage) {
       const questionId = parseInt(context.startPayload, 10);
       const status = await storage.getQuestionStatus(questionId, userId);
       if (status === 'ANSWERED') {
-        const type = 'HEARS RESULTS';
+        const type = ACTION_HEARS_RESULTS;
         const payload = { userId, questionId };
         const action = { type, payload };
         store.dispatch(action);
@@ -90,7 +91,7 @@ function botHandlers(initStore, initStorage) {
           reply = 'Участие в опросе прервано';
           break;
       };
-      const type = 'HEARS CANCEL';
+      const type = ACTION_HEARS_CANCEL;
       const payload = { userId, reply };
       const action = { type, payload };
       store.dispatch(action);
@@ -113,7 +114,7 @@ function botHandlers(initStore, initStorage) {
       const reply = `Опрос <b>${header}</b> сформирован!\n`
         + 'Принять участие можно по ссылке\n'
         + `https://telegram.me/prefVoteBot?start=${questionId}`;
-      const type = 'HEARS DONE';
+      const type = ACTION_HEARS_DONE;
       const payload = { userId, questionId, header, text, options, reply };
       const action = { type, payload };
       store.dispatch(action);
@@ -141,7 +142,7 @@ function botHandlers(initStore, initStorage) {
         });
       let reply = `Опрос <b>${header}</b>\n${text}\n\nРезультат:\n`;
       optionsResult.forEach(option => reply += `${option}\n`);
-      const type = 'HEARS RESULTS';
+      const type = ACTION_HEARS_RESULTS;
       const payload = { userId, questionId };
       const action = { type, payload };
       store.dispatch(action);

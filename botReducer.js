@@ -5,6 +5,7 @@
 
 'use strict';
 const { Markup } = require('telegraf');
+const { ACTION_HEARS_CANCEL, ACTION_HEARS_DONE, ACTION_HEARS_RESULTS } = require('./action_consts');
 const createDBStorage = require('./storage');
 const storage = createDBStorage();
 
@@ -55,6 +56,13 @@ function botReducer(state = {}, action) {
     }
 
 
+    case ACTION_HEARS_CANCEL: {
+      const { userId, reply } = action.payload;
+      state[userId] = { id: userId, command: null, reply };
+      return state;
+    }
+
+
     case 'HEARS DONE': {
       const { userId, questionId, header, text, options, reply } = action.payload;
       state[userId] = { id: userId, command: null, questionId, header, text, options, reply };
@@ -62,7 +70,21 @@ function botReducer(state = {}, action) {
     }
 
 
+    case ACTION_HEARS_DONE: {
+      const { userId, questionId, header, text, options, reply } = action.payload;
+      state[userId] = { id: userId, command: null, questionId, header, text, options, reply };
+      return state;
+    }
+
+
     case 'HEARS RESULTS': {
+      const { userId, questionId } = action.payload;
+      state[userId] = { id: userId, command: null, questionId };
+      return state;
+    }
+
+
+    case ACTION_HEARS_RESULTS: {
       const { userId, questionId } = action.payload;
       state[userId] = { id: userId, command: null, questionId };
       return state;
