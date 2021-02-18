@@ -51,8 +51,7 @@ const store = createStore(botReducer, initialState);
 
 bot.start(store.dispatch({ type: 'START' }));
 bot.command('new', store.dispatch({ type: 'NEW COMMAND' }));
-bot.hears('❌ Cancel', store.dispatch({ type: 'HEARS CANCEL' }));
-// bot.hears('❌ Cancel', hearsCancelHandler(store, storage));
+bot.hears('❌ Cancel', hearsCancelHandler(store, storage));
 bot.hears('✔️ Done', hearsDoneHandler(store, storage));
 bot.hears('👁 Results', hearsResultsHandler(store, storage));
 bot.on('text', store.dispatch({ type: 'NEW MESSAGE' }));

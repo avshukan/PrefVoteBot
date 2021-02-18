@@ -65,6 +65,13 @@ function botReducer(state = {}, action) {
       return { updatedState: state, handler };
 
 
+    case 'HEARS CANCEL': {
+      const { userId, reply } = action.payload;
+      state[userId] = { id: userId, command: null, reply };
+      return state;
+    }
+
+
     case 'HEARS DONE': {
       const { userId, questionId, header, text, options, reply } = action.payload;
       state[userId] = { id: userId, command: null, questionId, header, text, options, reply };
@@ -77,30 +84,6 @@ function botReducer(state = {}, action) {
       state[userId] = { id: userId, command: null, questionId };
       return state;
     }
-
-
-    case 'HEARS CANCEL':
-      handler = function(context) {
-        const userId = context.message.from.id;
-        if (!state[userId])
-          state[userId] = { id: userId };
-        let replyText = '-';
-        switch (state[userId].command) {
-          case 'new':
-            replyText = 'Создание опроса отменено';
-            break;
-          case 'vote':
-            replyText = 'Участие в опросе прервано';
-            break;
-        };
-        state[userId].command = '';
-        context.replyWithMarkdown(replyText, Markup
-          .keyboard([['/new']])
-          .oneTime()
-          .resize(),
-        );
-      };
-      return { updatedState: state, handler };
 
 
     case 'NEW MESSAGE':
