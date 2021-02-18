@@ -4,7 +4,6 @@
 // https://habr.com/ru/post/328152/
 
 'use strict';
-const { method } = require('./method');
 const { Markup } = require('telegraf');
 const createDBStorage = require('./storage');
 const storage = createDBStorage();
@@ -13,14 +12,14 @@ function botReducer(state = {}, action) {
   let handler = () => { };
   switch (action.type) {
     case 'START':
-      handler = async function (context) {
+      handler = async function(context) {
         const userId = context.message.from.id;
         if (!state[userId])
           state[userId] = { id: userId };
         if (context.startPayload === '') {
           return;
         }
-        const questionId = parseInt(context.startPayload);
+        const questionId = parseInt(context.startPayload, 10);
         state[userId].questionId = questionId;
         const status = await storage.getQuestionStatus(questionId, state[userId].id);
         if (status === 'ANSWERED') {
@@ -46,11 +45,12 @@ function botReducer(state = {}, action) {
           );
           state[userId].voteMessageId = voteMessageId;
         }
-      }
+      };
       return { updatedState: state, handler };
 
+
     case 'NEW COMMAND':
-      handler = function (context) {
+      handler = function(context) {
         const userId = context.message.from.id;
         if (!state[userId])
           state[userId] = { id: userId };
@@ -61,9 +61,8 @@ function botReducer(state = {}, action) {
           .oneTime()
           .resize(),
         );
-      }
+      };
       return { updatedState: state, handler };
-
 
 
     case 'HEARS DONE': {
@@ -73,48 +72,15 @@ function botReducer(state = {}, action) {
     }
 
 
-    case 'HEARS RESULT 2': {
+    case 'HEARS RESULT': {
       const { userId, questionId } = action.payload;
       state[userId] = { id: userId, command: null, questionId };
       return state;
     }
 
 
-    case 'HEARS RESULTS':
-      handler = async function (context) {
-        console.log('state', state);
-        const userId = context.message.from.id;
-        if (!state[userId])
-          state[userId] = { id: userId };
-        state[userId].command = null;
-
-        const questionId = state[userId].questionId;
-        const optrows = await storage.getOptions(questionId);
-        const optionsList = optrows.map(item => item.Id);
-        const rows = await storage.getRanks(questionId)
-        const optionsRating = method(optionsList, rows)
-        const optionsResult = optionsRating
-          .sort((item1, item2) => item1.place - item2.place)
-          .map(item => {
-            const position = (item.count === 1)
-              ? (item.place + 1)
-              : `${item.place + 1}-${item.place + item.count}`;
-            const name = optrows.filter(row => row.Id === item.id)[0].Name;
-            return `${position}. ${name}`;
-          })
-        let replyText = '<b>Результаты опроса</b>:\n';
-        optionsResult.forEach(option => replyText += `${option}\n`);
-        context.reply(replyText, {
-          parse_mode: 'HTML',
-          ...Markup
-            .keyboard([['/new']])
-            .resize()
-        });
-      }
-      return { updatedState: state, handler };
-
     case 'HEARS CANCEL':
-      handler = function (context) {
+      handler = function(context) {
         const userId = context.message.from.id;
         if (!state[userId])
           state[userId] = { id: userId };
@@ -133,11 +99,12 @@ function botReducer(state = {}, action) {
           .oneTime()
           .resize(),
         );
-      }
+      };
       return { updatedState: state, handler };
 
+
     case 'NEW MESSAGE':
-      handler = async function (context) {
+      handler = async function(context) {
         console.log('onText start state', state);
         const userId = context.message.from.id;
         const text = context.message.text;
@@ -160,7 +127,7 @@ function botReducer(state = {}, action) {
               );
               break;
             case 'question':
-              state[userId].text = text.substr(0, 255);;
+              state[userId].text = text.substr(0, 255); ;
               state[userId].options = [];
               state[userId].subCommand = 'option';
               context.replyWithMarkdown('Отправьте вариант ответа', Markup
@@ -184,7 +151,9 @@ function botReducer(state = {}, action) {
           const optionIndex = state[userId].options.findIndex(option => option.Name === text);
           console.log('onText optionIndex', optionIndex);
           if (optionIndex === -1) {
-            const text = `Простите, такого значения нет в списке вариантов\n** ${state[userId].header} **\n${state[userId].text}`;
+            const text = 'Простите, такого значения нет в списке вариантов\n'
+              + `<b>${state[userId].header}</b>\n`
+              + `${state[userId].text}`;
             const buttons = state[userId].options.map(option => [option.Name]);
             const mid = await context.replyWithMarkdown(text, Markup
               .keyboard([...buttons.map(button => [button]), ['❌ Cancel']])
@@ -218,12 +187,12 @@ function botReducer(state = {}, action) {
               state[userId].optionsSelected.push(selectedOption);
               await storage.saveRanks({
                 userId: userId,
-                options: state[userId].optionsSelected
-              })
+                options: state[userId].optionsSelected,
+              });
               await storage.saveStatus({
                 userId: state[userId].id,
                 questionId: state[userId].questionId,
-                status: 'ANSWERED'
+                status: 'ANSWERED',
               });
 
               let text = `Вы завершили опрос * ${state[userId].header} * \nВаш выбор:`;
@@ -240,7 +209,7 @@ function botReducer(state = {}, action) {
           }
 
         }
-      }
+      };
       return { updatedState: state, handler };
 
     default:

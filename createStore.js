@@ -6,9 +6,14 @@ function createStore(storeReducer, storeState = {}) {
   function dispatch(action) {
     console.log('dispatch action', action);
     console.log('dispatch state before', state);
-    if (action.type === 'HEARS DONE 2') {
+    if (
+      action.type === 'HEARS DONE' ||
+      action.type === 'HEARS DONE 2' ||
+      action.type === 'HEARS RESULT' ||
+      action.type === 'HEARS RESULT 2'
+    ) {
       state = storeReducer(state, action);
-      console.log('dispatch state after (hears done 2)', state);
+      console.log('dispatch state after (hears done|result 2)', state);
     } else {
       const { updatedState, handler } = storeReducer(state, action);
       state = updatedState;

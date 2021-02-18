@@ -18,13 +18,9 @@ function method(options, ranks) {
     });
   });
 
-  console.log('d', d);
   rows.forEach(row => {
     d[row.Option1][row.Option2] = parseInt(row.K, 10);
   });
-  console.log('d', d);
-
-  console.log('p start', p);
 
   for (let i = 0; i < optionsList.length; i++) {
     for (let j = 0; j < optionsList.length; j++) {
@@ -37,8 +33,6 @@ function method(options, ranks) {
       }
     }
   }
-
-  console.log('p continue', p);
 
   for (let i = 0; i < optionsList.length; i++) {
     for (let j = 0; j < optionsList.length; j++) {
@@ -59,7 +53,6 @@ function method(options, ranks) {
   }
 
   console.log('p end', p);
-
   const optionsMarks = [];
   for (let i = 0; i < optionsList.length; i++) {
     optionsMarks[optionsList[i]] = 0;
