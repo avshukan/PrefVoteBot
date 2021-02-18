@@ -1,6 +1,6 @@
 'use strict';
 
-const { ACTION_HEARS_CANCEL, ACTION_HEARS_DONE, ACTION_HEARS_RESULTS } = require('./action_consts');
+const { ACTION_HEARS_CANCEL, ACTION_HEARS_DONE, ACTION_HEARS_RESULTS } = require('./action_types');
 const { Markup } = require('telegraf');
 const { method } = require('./method');
 
