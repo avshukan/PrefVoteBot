@@ -12,6 +12,13 @@ const {
   ACTION_HEARS_DONE,
   ACTION_HEARS_RESULTS,
 } = require('./action_types');
+const {
+  STATE_DEFAULT,
+  STATE_CREATE_HEADER,
+  STATE_CREATE_TEXT,
+  STATE_CREATE_OPTION,
+  STATE_ANSWER
+} = require('./state_types');
 const createDBStorage = require('./storage');
 const storage = createDBStorage();
 

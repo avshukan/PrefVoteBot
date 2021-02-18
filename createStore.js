@@ -14,8 +14,8 @@ function createStore(storeReducer, storeState = {}) {
     console.log('dispatch action', action);
     console.log('dispatch state before', state);
     if (
-      action.type === ACTION_CAST_VOTE ||
       action.type === ACTION_CREATE_VOTE ||
+      action.type === ACTION_CAST_VOTE ||
       action.type === ACTION_HEARS_CANCEL ||
       action.type === ACTION_HEARS_DONE ||
       action.type === ACTION_HEARS_RESULTS
