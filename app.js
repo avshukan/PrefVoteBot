@@ -42,20 +42,23 @@ bot.use(Telegraf.log());
 const initialState = {};
 const botReducer = require('./botReducer');
 const createStore = require('./createStore');
-const {
-  commandNewHandler,
-  hearsCancelHandler,
-  hearsDoneHandler,
-  hearsResultsHandler,
-} = require('./botHandlers');
+// const {
+//   startHandler,
+//   commandNewHandler,
+//   hearsCancelHandler,
+//   hearsDoneHandler,
+//   hearsResultsHandler,
+// } = require('./botHandlers');
 const store = createStore(botReducer, initialState);
+const botHandlers = require('./botHandlers');
+const handlers = botHandlers(store, storage);
 
-bot.start(store.dispatch({ type: 'START' }));
-// bot.command('new', store.dispatch({ type: 'NEW COMMAND' }));
-bot.command('new', commandNewHandler(store, storage));
-bot.hears('❌ Cancel', hearsCancelHandler(store, storage));
-bot.hears('✔️ Done', hearsDoneHandler(store, storage));
-bot.hears('👁 Results', hearsResultsHandler(store, storage));
+// bot.start(store.dispatch({ type: 'START' }));
+bot.start(handlers.startHandler());
+bot.command('new', handlers.commandNewHandler());
+bot.hears('❌ Cancel', handlers.hearsCancelHandler());
+bot.hears('✔️ Done', handlers.hearsDoneHandler());
+bot.hears('👁 Results', handlers.hearsResultsHandler());
 bot.on('text', store.dispatch({ type: 'NEW MESSAGE' }));
 
 // bot.command('inline', (ctx) => {
@@ -66,15 +69,6 @@ bot.on('text', store.dispatch({ type: 'NEW MESSAGE' }));
 //       Markup.button.callback('Pepsi', 'Pepsi')
 //     ])
 //   })
-// })
-
-// bot.hears(/\/wrap (\d+)/, (ctx) => {
-//   return ctx.reply(
-//     'Keyboard wrap',
-//     Markup.keyboard(['one', 'two', 'three', 'four', 'five', 'six'], {
-//       columns: parseInt(ctx.match[1])
-//     })
-//   )
 // })
 
 // bot.action('Dr Pepper', (ctx, next) => {
