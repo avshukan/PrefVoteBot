@@ -5,14 +5,20 @@
 
 'use strict';
 const { Markup } = require('telegraf');
-const { ACTION_HEARS_CANCEL, ACTION_HEARS_DONE, ACTION_HEARS_RESULTS } = require('./action_types');
+const {
+  ACTION_CREATE_VOTE,
+  ACTION_CAST_VOTE,
+  ACTION_HEARS_CANCEL,
+  ACTION_HEARS_DONE,
+  ACTION_HEARS_RESULTS,
+} = require('./action_types');
 const createDBStorage = require('./storage');
 const storage = createDBStorage();
 
 function botReducer(state = {}, action) {
   let handler = () => { };
   switch (action.type) {
-    case 'VOTE': {
+    case ACTION_CAST_VOTE: {
       const {
         userId,
         questionId,
@@ -42,18 +48,18 @@ function botReducer(state = {}, action) {
     }
 
 
-    case 'NEW COMMAND': {
+    case ACTION_CREATE_VOTE: {
       const { userId, command, subCommand, reply } = action.payload;
       state[userId] = { id: userId, command, subCommand, reply };
       return state;
     }
 
 
-    case 'HEARS CANCEL': {
-      const { userId, reply } = action.payload;
-      state[userId] = { id: userId, command: null, reply };
-      return state;
-    }
+    // case 'HEARS CANCEL': {
+    //   const { userId, reply } = action.payload;
+    //   state[userId] = { id: userId, command: null, reply };
+    //   return state;
+    // }
 
 
     case ACTION_HEARS_CANCEL: {
@@ -63,11 +69,11 @@ function botReducer(state = {}, action) {
     }
 
 
-    case 'HEARS DONE': {
-      const { userId, questionId, header, text, options, reply } = action.payload;
-      state[userId] = { id: userId, command: null, questionId, header, text, options, reply };
-      return state;
-    }
+    // case 'HEARS DONE': {
+    //   const { userId, questionId, header, text, options, reply } = action.payload;
+    //   state[userId] = { id: userId, command: null, questionId, header, text, options, reply };
+    //   return state;
+    // }
 
 
     case ACTION_HEARS_DONE: {
@@ -77,11 +83,11 @@ function botReducer(state = {}, action) {
     }
 
 
-    case 'HEARS RESULTS': {
-      const { userId, questionId } = action.payload;
-      state[userId] = { id: userId, command: null, questionId };
-      return state;
-    }
+    // case 'HEARS RESULTS': {
+    //   const { userId, questionId } = action.payload;
+    //   state[userId] = { id: userId, command: null, questionId };
+    //   return state;
+    // }
 
 
     case ACTION_HEARS_RESULTS: {

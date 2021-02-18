@@ -1,5 +1,11 @@
 'use strict';
-const { ACTION_HEARS_CANCEL, ACTION_HEARS_DONE, ACTION_HEARS_RESULTS } = require('./action_types');
+const {
+  ACTION_CREATE_VOTE,
+  ACTION_CAST_VOTE,
+  ACTION_HEARS_CANCEL,
+  ACTION_HEARS_DONE,
+  ACTION_HEARS_RESULTS,
+} = require('./action_types');
 
 function createStore(storeReducer, storeState = {}) {
   let state = storeState;
@@ -8,11 +14,8 @@ function createStore(storeReducer, storeState = {}) {
     console.log('dispatch action', action);
     console.log('dispatch state before', state);
     if (
-      action.type === 'VOTE' ||
-      action.type === 'NEW COMMAND' ||
-      action.type === 'HEARS DONE' ||
-      action.type === 'HEARS RESULTS' ||
-      action.type === 'HEARS CANCEL' ||
+      action.type === ACTION_CAST_VOTE ||
+      action.type === ACTION_CREATE_VOTE ||
       action.type === ACTION_HEARS_CANCEL ||
       action.type === ACTION_HEARS_DONE ||
       action.type === ACTION_HEARS_RESULTS

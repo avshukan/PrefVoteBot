@@ -1,6 +1,12 @@
 'use strict';
 
-const { ACTION_HEARS_CANCEL, ACTION_HEARS_DONE, ACTION_HEARS_RESULTS } = require('./action_types');
+const {
+  ACTION_CREATE_VOTE,
+  ACTION_CAST_VOTE,
+  ACTION_HEARS_CANCEL,
+  ACTION_HEARS_DONE,
+  ACTION_HEARS_RESULTS
+} = require('./action_types');
 const { Markup } = require('telegraf');
 const { method } = require('./method');
 
@@ -13,7 +19,10 @@ function botHandlers(initStore, initStorage) {
       const userId = context.message.from.id;
       // const userState = store.getUserState(userId);
       if (context.startPayload === '') {
-        console.log('context.startPayload === \'\' => return;')
+        console.log('context.startPayload === \'\' => return;');
+        console.log('Здесь должно быть какое-о приветственное сообщение');
+        const reply = 'Здесь должно быть какое-о приветственное сообщение';
+        context.replyWithMarkdown(reply);
         return;
       }
       const questionId = parseInt(context.startPayload, 10);
@@ -23,7 +32,7 @@ function botHandlers(initStore, initStorage) {
         const payload = { userId, questionId };
         const action = { type, payload };
         store.dispatch(action);
-        await hearsResultsHandler()(context);
+        hearsResultsHandler()(context);
       } else {
         const questionWithOptions = await storage.getQuestionWithOptions(questionId);
         const { header, text, options } = questionWithOptions;
@@ -34,7 +43,7 @@ function botHandlers(initStore, initStorage) {
           .oneTime()
           .resize(),
         );
-        const type = 'VOTE';
+        const type = ACTION_CAST_VOTE;
         const payload = {
           userId,
           questionId,
@@ -58,7 +67,7 @@ function botHandlers(initStore, initStorage) {
     return async function (context) {
       const userId = context.message.from.id;
       const reply = 'Отправьте заголовок опроса';
-      const type = 'NEW COMMAND';
+      const type = ACTION_CREATE_VOTE;
       const payload = {
         userId,
         command: 'new',
