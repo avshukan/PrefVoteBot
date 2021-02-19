@@ -5,33 +5,18 @@
 
 'use strict';
 const { Markup } = require('telegraf');
-const {
-  ACTION_CREATE_VOTE,
-  ACTION_CREATE_HEADER,
-  ACTION_CREATE_TEXT,
-  ACTION_CREATE_OPTION,
-  ACTION_CAST_VOTE,
-  ACTION_HEARS_CANCEL,
-  ACTION_HEARS_DONE,
-  ACTION_HEARS_RESULTS,
-} = require('./action_types');
-const {
-  STATE_DEFAULT,
-  STATE_CREATE_HEADER,
-  STATE_CREATE_TEXT,
-  STATE_CREATE_OPTION,
-  STATE_ANSWER
-} = require('./state_types');
+const { ACTIONS } = require('./action_types');
+const { STATES } = require('./state_types');
 
 function botReducer(state = {}, action) {
   switch (action.type) {
-    case ACTION_CREATE_VOTE: {
+    case ACTIONS.CREATE_VOTE: {
       const { userId, reply } = action.payload;
-      state[userId] = { id: userId, type: STATE_CREATE_HEADER, reply };
+      state[userId] = { id: userId, type: STATES.CREATE_HEADER, reply };
       return state;
     }
 
-    case ACTION_CAST_VOTE: {
+    case ACTIONS.CAST_VOTE: {
       const {
         userId,
         questionId,
@@ -43,7 +28,7 @@ function botReducer(state = {}, action) {
       state[userId] = {
         ...state[userId],
         id: userId,
-        type: STATE_ANSWER,
+        type: STATES.ANSWER,
         questionId,
         info,
         options,
@@ -52,30 +37,30 @@ function botReducer(state = {}, action) {
       return state;
     }
 
-    case ACTION_HEARS_CANCEL: {
+    case ACTIONS.HEARS_CANCEL: {
       const { userId, reply } = action.payload;
-      state[userId] = { id: userId, type: STATE_DEFAULT, reply };
+      state[userId] = { id: userId, type: STATES.DEFAULT, reply };
       return state;
     }
 
-    case ACTION_HEARS_DONE: {
+    case ACTIONS.HEARS_DONE: {
       const { userId, questionId, header, text, options, reply } = action.payload;
-      state[userId] = { id: userId, type: STATE_DEFAULT, questionId, header, text, options, reply };
+      state[userId] = { id: userId, type: STATES.DEFAULT, questionId, header, text, options, reply };
       return state;
     }
 
-    case ACTION_HEARS_RESULTS: {
+    case ACTIONS.HEARS_RESULTS: {
       const { userId, questionId } = action.payload;
-      state[userId] = { id: userId, type: STATE_DEFAULT, questionId };
+      state[userId] = { id: userId, type: STATES.DEFAULT, questionId };
       return state;
     }
 
-    case ACTION_CREATE_HEADER: {
+    case ACTIONS.CREATE_HEADER: {
       const { userId, questionId, header, reply } = action.payload;
       state[userId] = {
         ...state[userId],
         id: userId,
-        type: STATE_CREATE_TEXT,
+        type: STATES.CREATE_TEXT,
         questionId,
         header,
         reply
@@ -83,12 +68,12 @@ function botReducer(state = {}, action) {
       return state;
     }
 
-    case ACTION_CREATE_TEXT: {
+    case ACTIONS.CREATE_TEXT: {
       const { userId, questionId, text, reply } = action.payload;
       state[userId] = {
         ...state[userId],
         id: userId,
-        type: STATE_CREATE_OPTION,
+        type: STATES.CREATE_OPTION,
         questionId,
         text,
         options: [],
@@ -97,13 +82,13 @@ function botReducer(state = {}, action) {
       return state;
     }
 
-    case ACTION_CREATE_OPTION: {
+    case ACTIONS.CREATE_OPTION: {
       const { userId, questionId, option, reply } = action.payload;
       const options = [...state[userId].options, option];
       state[userId] = {
         ...state[userId],
         id: userId,
-        type: STATE_CREATE_OPTION,
+        type: STATES.CREATE_OPTION,
         questionId,
         options,
         reply

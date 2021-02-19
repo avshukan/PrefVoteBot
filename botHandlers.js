@@ -1,22 +1,7 @@
 'use strict';
 
-const {
-  ACTION_CREATE_VOTE,
-  ACTION_CREATE_HEADER,
-  ACTION_CREATE_TEXT,
-  ACTION_CREATE_OPTION,
-  ACTION_CAST_VOTE,
-  ACTION_HEARS_CANCEL,
-  ACTION_HEARS_DONE,
-  ACTION_HEARS_RESULTS
-} = require('./action_types');
-const {
-  STATE_DEFAULT,
-  STATE_CREATE_HEADER,
-  STATE_CREATE_TEXT,
-  STATE_CREATE_OPTION,
-  STATE_ANSWER
-} = require('./state_types');
+const { ACTIONS } = require('./action_types');
+const { STATES } = require('./state_types');
 const { Markup } = require('telegraf');
 const { method } = require('./method');
 
@@ -38,7 +23,7 @@ function botHandlers(initStore, initStorage) {
       const questionId = parseInt(context.startPayload, 10);
       const status = await storage.getQuestionStatus(questionId, userId);
       if (status === 'ANSWERED') {
-        const type = ACTION_HEARS_RESULTS;
+        const type = ACTIONS.HEARS_RESULTS;
         const payload = { userId, questionId };
         const action = { type, payload };
         store.dispatch(action);
@@ -53,7 +38,7 @@ function botHandlers(initStore, initStorage) {
           .oneTime()
           .resize(),
         );
-        const type = ACTION_CAST_VOTE;
+        const type = ACTIONS.CAST_VOTE;
         const payload = {
           userId,
           questionId,
@@ -75,7 +60,7 @@ function botHandlers(initStore, initStorage) {
     return async function (context) {
       const userId = context.message.from.id;
       const reply = 'Отправьте заголовок опроса';
-      const type = ACTION_CREATE_VOTE;
+      const type = ACTIONS.CREATE_VOTE;
       const payload = {
         userId,
         reply
@@ -99,18 +84,18 @@ function botHandlers(initStore, initStorage) {
       const { type } = userState;
       let reply = '-';
       switch (type) {
-        case STATE_CREATE_HEADER:
-        case STATE_CREATE_TEXT:
-        case STATE_CREATE_OPTION:
+        case STATES.CREATE_HEADER:
+        case STATES.CREATE_TEXT:
+        case STATES.CREATE_OPTION:
           reply = 'Создание опроса отменено!';
           break;
-        case STATE_ANSWER:
+        case STATES.ANSWER:
           reply = 'Участие в опросе прервано!';
           break;
       };
-      // const type = ACTION_HEARS_CANCEL;
+      // const type = ACTIONS.HEARS_CANCEL;
       const payload = { userId, reply };
-      const action = { type: ACTION_HEARS_CANCEL, payload };
+      const action = { type: ACTIONS.HEARS_CANCEL, payload };
       store.dispatch(action);
       context.reply(reply, {
         parse_mode: 'HTML',
@@ -131,7 +116,7 @@ function botHandlers(initStore, initStorage) {
       const reply = `Опрос <b>${header}</b> сформирован!\n`
         + 'Принять участие можно по ссылке\n'
         + `https://telegram.me/prefVoteBot?start=${questionId}`;
-      const type = ACTION_HEARS_DONE;
+      const type = ACTIONS.HEARS_DONE;
       const payload = { userId, questionId, header, text, options, reply };
       const action = { type, payload };
       store.dispatch(action);
@@ -159,7 +144,7 @@ function botHandlers(initStore, initStorage) {
         });
       let reply = `Опрос <b>${header}</b>\n${text}\n\nРезультат:\n`;
       optionsResult.forEach(option => reply += `${option}\n`);
-      const type = ACTION_HEARS_RESULTS;
+      const type = ACTIONS.HEARS_RESULTS;
       const payload = { userId, questionId };
       const action = { type, payload };
       store.dispatch(action);
@@ -174,10 +159,10 @@ function botHandlers(initStore, initStorage) {
       const { questionId, type } = userState;
       const info = context.message.text;
       switch (type) {
-        case STATE_CREATE_HEADER: {
+        case STATES.CREATE_HEADER: {
           const header = info.substr(0, 63);
           const reply = 'Отправьте текст вопроса';
-          const type = ACTION_CREATE_HEADER;
+          const type = ACTIONS.CREATE_HEADER;
           const payload = { userId, questionId, header, reply };
           const action = { type, payload };
           store.dispatch(action);
@@ -191,10 +176,10 @@ function botHandlers(initStore, initStorage) {
           break;
         }
 
-        case STATE_CREATE_TEXT: {
+        case STATES.CREATE_TEXT: {
           const text = info.substr(0, 255);
           const reply = 'Отправьте вариант ответа';
-          const type = ACTION_CREATE_TEXT;
+          const type = ACTIONS.CREATE_TEXT;
           const payload = { userId, questionId, text, reply };
           const action = { type, payload };
           store.dispatch(action);
@@ -208,10 +193,10 @@ function botHandlers(initStore, initStorage) {
           break;
         }
 
-        case STATE_CREATE_OPTION: {
+        case STATES.CREATE_OPTION: {
           const option = info.substr(0, 100);
           const reply = 'Отправьте <b>вариант</b> ответа';
-          const type = ACTION_CREATE_OPTION;
+          const type = ACTIONS.CREATE_OPTION;
           const payload = { userId, questionId, option, reply };
           const action = { type, payload };
           store.dispatch(action);
@@ -224,7 +209,7 @@ function botHandlers(initStore, initStorage) {
           break;
         }
 
-        case STATE_ANSWER: {
+        case STATES.ANSWER: {
           const { header, text, options, clear_messages_queue } = userState;
           const optionIndex = options.findIndex(option => option.Name === info);
           console.log('onText optionIndex', optionIndex);
@@ -240,7 +225,7 @@ function botHandlers(initStore, initStorage) {
                 .oneTime()
                 .resize(),
             });
-            // const type = ACTION_CAST_VOTE;
+            // const type = ACTIONS.CAST_VOTE;
             // const payload = { userId, questionId, mid, reply };
             // const action = { type, payload };
             // store.dispatch(action);
@@ -249,7 +234,7 @@ function botHandlers(initStore, initStorage) {
             const { header, text, options, optionsSelected } = userState;
             const selectedOption = options.splice(optionIndex, 1);
             optionsSelected.push(...selectedOption);
-            const type = ACTION_CAST_VOTE;
+            const type = ACTIONS.CAST_VOTE;
             const payload = { userId, questionId, info, options, optionsSelected };
             const action = { type, payload };
             store.dispatch(action);
