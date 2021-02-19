@@ -51,7 +51,8 @@ bot.command('new', handlers.commandNewHandler());
 bot.hears('❌ Cancel', handlers.hearsCancelHandler());
 bot.hears('✔️ Done', handlers.hearsDoneHandler());
 bot.hears('👁 Results', handlers.hearsResultsHandler());
-bot.on('text', store.dispatch({ type: 'NEW MESSAGE' }));
+bot.on('text', handlers.onTextHandler());
+// bot.on('text', store.dispatch({ type: 'NEW MESSAGE' }));
 
 // bot.command('inline', (ctx) => {
 //   return ctx.reply('<b>Coke</b> or <i>Pepsi?</i>', {

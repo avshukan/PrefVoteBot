@@ -2,6 +2,9 @@
 
 const {
   ACTION_CREATE_VOTE,
+  ACTION_CREATE_HEADER,
+  ACTION_CREATE_TEXT,
+  ACTION_CREATE_OPTION,
   ACTION_CAST_VOTE,
   ACTION_HEARS_CANCEL,
   ACTION_HEARS_DONE,
@@ -54,8 +57,6 @@ function botHandlers(initStore, initStorage) {
         const payload = {
           userId,
           questionId,
-          command: 'vote',
-          subCommand: '',
           header,
           text,
           options,
@@ -77,8 +78,6 @@ function botHandlers(initStore, initStorage) {
       const type = ACTION_CREATE_VOTE;
       const payload = {
         userId,
-        command: 'new',
-        subCommand: 'header',
         reply
       };
       const action = { type, payload };
@@ -97,19 +96,21 @@ function botHandlers(initStore, initStorage) {
     return async function (context) {
       const userId = context.message.from.id;
       const userState = store.getUserState(userId);
-      const { command } = userState;
+      const { type } = userState;
       let reply = '-';
-      switch (command) {
-        case 'new':
-          reply = 'Создание опроса отменено';
+      switch (type) {
+        case STATE_CREATE_HEADER:
+        case STATE_CREATE_TEXT:
+        case STATE_CREATE_OPTION:
+          reply = 'Создание опроса отменено!';
           break;
-        case 'vote':
-          reply = 'Участие в опросе прервано';
+        case STATE_ANSWER:
+          reply = 'Участие в опросе прервано!';
           break;
       };
-      const type = ACTION_HEARS_CANCEL;
+      // const type = ACTION_HEARS_CANCEL;
       const payload = { userId, reply };
-      const action = { type, payload };
+      const action = { type: ACTION_HEARS_CANCEL, payload };
       store.dispatch(action);
       context.reply(reply, {
         parse_mode: 'HTML',
@@ -166,12 +167,150 @@ function botHandlers(initStore, initStorage) {
     };
   }
 
+  function onTextHandler() {
+    return async function(context) {
+      const userId = context.message.from.id;
+      const userState = store.getUserState(userId);
+      const { questionId, type } = userState;
+      const info = context.message.text;
+      switch (type) {
+        case STATE_CREATE_HEADER: {
+          const header = info.substr(0, 63);
+          const reply = 'Отправьте текст вопроса';
+          const type = ACTION_CREATE_HEADER;
+          const payload = { userId, questionId, header, reply };
+          const action = { type, payload };
+          store.dispatch(action);
+          context.reply(reply, {
+            parse_mode: 'HTML',
+            ...Markup
+              .keyboard(['❌ Cancel'])
+              .oneTime()
+              .resize(),
+          });
+          break;
+        }
+
+        case STATE_CREATE_TEXT: {
+          const text = info.substr(0, 255);
+          const reply = 'Отправьте вариант ответа';
+          const type = ACTION_CREATE_TEXT;
+          const payload = { userId, questionId, text, reply };
+          const action = { type, payload };
+          store.dispatch(action);
+          context.reply(reply, {
+            parse_mode: 'HTML',
+            ...Markup
+              .keyboard(['❌ Cancel'])
+              .oneTime()
+              .resize(),
+          });
+          break;
+        }
+
+        case STATE_CREATE_OPTION: {
+          const option = info.substr(0, 100);
+          const reply = 'Отправьте <b>вариант</b> ответа';
+          const type = ACTION_CREATE_OPTION;
+          const payload = { userId, questionId, option, reply };
+          const action = { type, payload };
+          store.dispatch(action);
+          const extraReply = Markup
+              .keyboard([['✔️ Done', '❌ Cancel']])
+              .oneTime()
+              .resize();
+          extraReply.parse_mode = 'HTML';
+          context.reply(reply, extraReply);
+          break;
+        }
+
+        case STATE_ANSWER: {
+          const { header, text, options, clear_messages_queue } = userState;
+          const optionIndex = options.findIndex(option => option.Name === info);
+          console.log('onText optionIndex', optionIndex);
+          if (optionIndex === -1) {
+            const reply = `Простите, значения <b>${info}</b> в списке вариантов\n`
+              + `<b>${header}</b>\n`
+              + `${text}`;
+            const buttons = options.map(option => [option.Name]);
+            const mid = await context.reply(reply, {
+              parse_mode: 'HTML',
+              ...Markup
+                .keyboard([...buttons.map(button => [button]), ['❌ Cancel']])
+                .oneTime()
+                .resize(),
+            });
+            // const type = ACTION_CAST_VOTE;
+            // const payload = { userId, questionId, mid, reply };
+            // const action = { type, payload };
+            // store.dispatch(action);
+            // state[userId].mid.push(mid);
+          } else {
+            const { header, text, options, optionsSelected } = userState;
+            const selectedOption = options.splice(optionIndex, 1);
+            optionsSelected.push(...selectedOption);
+            const type = ACTION_CAST_VOTE;
+            const payload = { userId, questionId, info, options, optionsSelected };
+            const action = { type, payload };
+            store.dispatch(action);
+            if (options.length > 1) {
+              const buttons = options.map(option => option.Name);
+              console.log('id', context.message.message_id);
+              // await context.deleteMessage(context.message.message_id);
+              // const del = await context.deleteMessage(state[userId].voteMessageId.message_id);
+              let reply = `${header}\n${text}\nВы уже выбрали:`;
+              optionsSelected.forEach((option, index) => {
+                reply += `\n${index + 1}. ${option.Name}`;
+              });
+              const mid = await context.reply(reply, {
+                parse_mode: 'HTML',
+                ...Markup
+                  .keyboard([...buttons.map(button => [button]), ['❌ Cancel']])
+                  .oneTime()
+                  .resize(),
+              });
+              // state[userId].voteMessageId = mid;
+              // state[userId].mid.push(mid);
+            } else {
+              const selectedOption = options.pop();
+              console.log('last option', selectedOption);
+              optionsSelected.push(selectedOption);
+              await storage.saveRanks({
+                userId: userId,
+                options: optionsSelected,
+              });
+              await storage.saveStatus({
+                userId,
+                questionId,
+                status: 'ANSWERED',
+              });
+
+              let reply = `Вы завершили опрос * ${header} * \nВаш выбор:`;
+              optionsSelected.forEach((option, index) => {
+                reply += `\n${index + 1}. ${option.Name}`;
+              });
+              context.reply(reply, {
+                parse_mode: 'HTML',
+                ...Markup
+                  .keyboard([['👁 Results']])
+                  .oneTime()
+                  .resize(),
+              });
+            }
+          }
+        }
+
+      }
+    };
+  }
+
   return {
     startHandler,
     commandNewHandler,
     hearsCancelHandler,
     hearsDoneHandler,
     hearsResultsHandler,
+    onTextHandler
   };
 }
 

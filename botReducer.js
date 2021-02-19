@@ -7,6 +7,9 @@
 const { Markup } = require('telegraf');
 const {
   ACTION_CREATE_VOTE,
+  ACTION_CREATE_HEADER,
+  ACTION_CREATE_TEXT,
+  ACTION_CREATE_OPTION,
   ACTION_CAST_VOTE,
   ACTION_HEARS_CANCEL,
   ACTION_HEARS_DONE,
@@ -19,199 +22,94 @@ const {
   STATE_CREATE_OPTION,
   STATE_ANSWER
 } = require('./state_types');
-const createDBStorage = require('./storage');
-const storage = createDBStorage();
 
 function botReducer(state = {}, action) {
-  let handler = () => { };
   switch (action.type) {
+    case ACTION_CREATE_VOTE: {
+      const { userId, reply } = action.payload;
+      state[userId] = { id: userId, type: STATE_CREATE_HEADER, reply };
+      return state;
+    }
+
     case ACTION_CAST_VOTE: {
       const {
         userId,
         questionId,
-        header,
-        text,
+        info,
         options,
         optionsSelected,
-        mid,
-        reply,
-        voteMessageId,
       } = action.payload;
       console.log('VOTE action', action);
       state[userId] = {
+        ...state[userId],
         id: userId,
+        type: STATE_ANSWER,
         questionId,
-        command: 'vote',
-        subCommand: '',
-        header,
-        text,
+        info,
         options,
         optionsSelected,
-        mid,
-        reply,
-        voteMessageId,
       };
       return state;
     }
-
-
-    case ACTION_CREATE_VOTE: {
-      const { userId, command, subCommand, reply } = action.payload;
-      state[userId] = { id: userId, command, subCommand, reply };
-      return state;
-    }
-
-
-    // case 'HEARS CANCEL': {
-    //   const { userId, reply } = action.payload;
-    //   state[userId] = { id: userId, command: null, reply };
-    //   return state;
-    // }
-
 
     case ACTION_HEARS_CANCEL: {
       const { userId, reply } = action.payload;
-      state[userId] = { id: userId, command: null, reply };
+      state[userId] = { id: userId, type: STATE_DEFAULT, reply };
       return state;
     }
-
-
-    // case 'HEARS DONE': {
-    //   const { userId, questionId, header, text, options, reply } = action.payload;
-    //   state[userId] = { id: userId, command: null, questionId, header, text, options, reply };
-    //   return state;
-    // }
-
 
     case ACTION_HEARS_DONE: {
       const { userId, questionId, header, text, options, reply } = action.payload;
-      state[userId] = { id: userId, command: null, questionId, header, text, options, reply };
+      state[userId] = { id: userId, type: STATE_DEFAULT, questionId, header, text, options, reply };
       return state;
     }
-
-
-    // case 'HEARS RESULTS': {
-    //   const { userId, questionId } = action.payload;
-    //   state[userId] = { id: userId, command: null, questionId };
-    //   return state;
-    // }
-
 
     case ACTION_HEARS_RESULTS: {
       const { userId, questionId } = action.payload;
-      state[userId] = { id: userId, command: null, questionId };
+      state[userId] = { id: userId, type: STATE_DEFAULT, questionId };
       return state;
     }
 
-
-    case 'NEW MESSAGE':
-      handler = async function(context) {
-        console.log('onText start state', state);
-        const userId = context.message.from.id;
-        const text = context.message.text;
-
-        if (!state[userId])
-          state[userId] = { id: userId };
-        state[userId].index = 0;
-
-        console.log('onText middle state', state);
-
-        if (state[userId].command === 'new') {
-          switch (state[userId].subCommand) {
-            case 'header':
-              state[userId].header = text.substr(0, 63);
-              state[userId].subCommand = 'question';
-              context.replyWithMarkdown('Отправьте текст вопроса', Markup
-                .keyboard(['❌ Cancel'])
-                .oneTime()
-                .resize(),
-              );
-              break;
-            case 'question':
-              state[userId].text = text.substr(0, 255); ;
-              state[userId].options = [];
-              state[userId].subCommand = 'option';
-              context.replyWithMarkdown('Отправьте вариант ответа', Markup
-                .keyboard(['❌ Cancel'])
-                .oneTime()
-                .resize(),
-              );
-              break;
-            case 'option':
-              state[userId].options.push(text.substr(0, 100));
-              context.replyWithMarkdown('Отправьте вариант ответа', Markup
-                .keyboard([['✔️ Done', '❌ Cancel']])
-                .oneTime()
-                .resize(),
-              );
-              break;
-          }
-        }
-        if (state[userId].command === 'vote') {
-          console.log('onText state options', state[userId].options);
-          const optionIndex = state[userId].options.findIndex(option => option.Name === text);
-          console.log('onText optionIndex', optionIndex);
-          if (optionIndex === -1) {
-            const text = 'Простите, такого значения нет в списке вариантов\n'
-              + `<b>${state[userId].header}</b>\n`
-              + `${state[userId].text}`;
-            const buttons = state[userId].options.map(option => [option.Name]);
-            const mid = await context.replyWithMarkdown(text, Markup
-              .keyboard([...buttons.map(button => [button]), ['❌ Cancel']])
-              .oneTime()
-              .resize(),
-            );
-            state[userId].mid.push(mid);
-          } else {
-            const selectedOption = state[userId].options.splice(optionIndex, 1);
-            state[userId].optionsSelected.push(...selectedOption);
-            if (state[userId].options.length > 1) {
-              const buttons = state[userId].options.map(option => option.Name);
-              console.log('id', context.message.message_id);
-              await context.deleteMessage(context.message.message_id);
-              const del = await context.deleteMessage(state[userId].voteMessageId.message_id);
-              console.log('del', del);
-              let text = `${state[userId].header}\n${state[userId].text}\nВы уже выбрали:`;
-              state[userId].optionsSelected.forEach((option, index) => {
-                text += `\n${index + 1}. ${option.Name}`;
-              });
-              const mid = await context.replyWithMarkdown(text, Markup
-                .keyboard([...buttons.map(button => [button]), ['❌ Cancel']])
-                .oneTime()
-                .resize(),
-              );
-              state[userId].voteMessageId = mid;
-              state[userId].mid.push(mid);
-            } else {
-              const selectedOption = state[userId].options.pop();
-              console.log('last option', selectedOption);
-              state[userId].optionsSelected.push(selectedOption);
-              await storage.saveRanks({
-                userId: userId,
-                options: state[userId].optionsSelected,
-              });
-              await storage.saveStatus({
-                userId: state[userId].id,
-                questionId: state[userId].questionId,
-                status: 'ANSWERED',
-              });
-
-              let text = `Вы завершили опрос * ${state[userId].header} * \nВаш выбор:`;
-              state[userId].optionsSelected.forEach((option, index) => {
-                text += `\n${index + 1}. ${option.Name}`;
-              });
-              context.replyWithMarkdown(text, Markup
-                .keyboard([['👁 Results']])
-                .oneTime()
-                .resize(),
-              );
-
-            }
-          }
-
-        }
+    case ACTION_CREATE_HEADER: {
+      const { userId, questionId, header, reply } = action.payload;
+      state[userId] = {
+        ...state[userId],
+        id: userId,
+        type: STATE_CREATE_TEXT,
+        questionId,
+        header,
+        reply
       };
-      return { updatedState: state, handler };
+      return state;
+    }
+
+    case ACTION_CREATE_TEXT: {
+      const { userId, questionId, text, reply } = action.payload;
+      state[userId] = {
+        ...state[userId],
+        id: userId,
+        type: STATE_CREATE_OPTION,
+        questionId,
+        text,
+        options: [],
+        reply
+      };
+      return state;
+    }
+
+    case ACTION_CREATE_OPTION: {
+      const { userId, questionId, option, reply } = action.payload;
+      const options = [...state[userId].options, option];
+      state[userId] = {
+        ...state[userId],
+        id: userId,
+        type: STATE_CREATE_OPTION,
+        questionId,
+        options,
+        reply
+      };
+      return state;
+    }
 
     default:
       return state;
