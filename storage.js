@@ -23,6 +23,16 @@ const promisePool = pool.promise();
 function createDBStorage() {
   let _pool = promisePool;
 
+  async function getQuestion(questionId) {
+    const sql = 'SELECT * FROM `prefvotebot_questions` WHERE `Id` = ?';
+    const data = [questionId];
+    const [question] = await _pool.execute(sql, data);
+    return {
+      header: question[0].Header,
+      text: question[0].Text,
+    };
+  }
+
   async function getQuestionStatus(questionId, userId) {
     const sql = 'SELECT * FROM `prefvotebot_statuses` WHERE `QuestionId` = ? AND `User` = ?';
     const data = [questionId, userId];
@@ -105,6 +115,7 @@ function createDBStorage() {
   }
 
   return {
+    getQuestion,
     getQuestionStatus,
     getQuestionWithOptions,
     getOptions,

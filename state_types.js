@@ -6,6 +6,6 @@ const STATES = {
   CREATE_TEXT: 'STATE_CREATE_TEXT',
   CREATE_OPTION: 'STATE_CREATE_OPTION',
   ANSWER: 'STATE_ANSWER',
-}
+};
 
 module.exports = { STATES };

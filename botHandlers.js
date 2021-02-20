@@ -2,15 +2,15 @@
 
 const { ACTIONS } = require('./action_types');
 const { STATES } = require('./state_types');
-const { Markup } = require('telegraf');
 const { method } = require('./method');
+const getExtraReply = require('./getExtraReply');
 
 function botHandlers(initStore, initStorage) {
   let store = initStore;
   let storage = initStorage;
 
   function startHandler() {
-    return async function (context) {
+    return async function(context) {
       const userId = context.message.from.id;
       // const userState = store.getUserState(userId);
       if (context.startPayload === '') {
@@ -23,112 +23,86 @@ function botHandlers(initStore, initStorage) {
       const questionId = parseInt(context.startPayload, 10);
       const status = await storage.getQuestionStatus(questionId, userId);
       if (status === 'ANSWERED') {
-        const type = ACTIONS.HEARS_RESULTS;
-        const payload = { userId, questionId };
-        const action = { type, payload };
-        store.dispatch(action);
+        store.dispatch({
+          type: ACTIONS.HEARS_RESULTS,
+          payload: { userId, questionId },
+        });
         hearsResultsHandler()(context);
-      } else {
-        const questionWithOptions = await storage.getQuestionWithOptions(questionId);
-        const { header, text, options } = questionWithOptions;
-        const reply = `${header}\n${text}`;
-        const buttons = options.map(option => option.Name);
-        const voteMessageId = await context.replyWithMarkdown(reply, Markup
-          .keyboard([...buttons.map(button => [button]), ['❌ Cancel']])
-          .oneTime()
-          .resize(),
-        );
-        const type = ACTIONS.CAST_VOTE;
-        const payload = {
-          userId,
-          questionId,
-          header,
-          text,
-          options,
-          optionsSelected: [],
-          mid: [],
-          reply,
-          voteMessageId
-        };
-        const action = { type, payload };
-        store.dispatch(action);
+        return;
       }
-    }
-  }
-
-  function commandNewHandler() {
-    return async function (context) {
-      const userId = context.message.from.id;
-      const reply = 'Отправьте заголовок опроса';
-      const type = ACTIONS.CREATE_VOTE;
+      // NOT ANSWERED
+      const questionWithOptions = await storage.getQuestionWithOptions(questionId);
+      const { header, text, options } = questionWithOptions;
+      const type = ACTIONS.CAST_VOTE;
       const payload = {
         userId,
-        reply
+        questionId,
+        header,
+        text,
+        options,
+        optionsSelected: [],
       };
       const action = { type, payload };
       store.dispatch(action);
-      context.reply(reply, {
-        parse_mode: 'HTML',
-        ...Markup
-          .keyboard(['❌ Cancel'])
-          .oneTime()
-          .resize(),
+      const { reply, buttons } = store.getUserState(userId);
+      const replyMessage = context.reply(reply, getExtraReply(buttons));
+      replyMessage
+        .then(({ message_id }) => {
+          console.log('message_id', message_id);
+          store.dispatch({
+            type: ACTIONS.APPEND_MESSAGE_TO_QUEUE,
+            payload: { userId, message_id },
+          });
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    };
+  }
+
+  function commandNewHandler() {
+    return async function(context) {
+      const userId = context.message.from.id;
+      store.dispatch({
+        type: ACTIONS.CREATE_VOTE,
+        payload: { userId },
       });
+      const { reply, buttons } = store.getUserState(userId);
+      context.reply(reply, getExtraReply(buttons));
     };
   }
 
   function hearsCancelHandler() {
-    return async function (context) {
+    return async function(context) {
       const userId = context.message.from.id;
-      const userState = store.getUserState(userId);
-      const { type } = userState;
-      let reply = '-';
-      switch (type) {
-        case STATES.CREATE_HEADER:
-        case STATES.CREATE_TEXT:
-        case STATES.CREATE_OPTION:
-          reply = 'Создание опроса отменено!';
-          break;
-        case STATES.ANSWER:
-          reply = 'Участие в опросе прервано!';
-          break;
-      };
-      // const type = ACTIONS.HEARS_CANCEL;
-      const payload = { userId, reply };
-      const action = { type: ACTIONS.HEARS_CANCEL, payload };
-      store.dispatch(action);
-      context.reply(reply, {
-        parse_mode: 'HTML',
-        ...Markup
-          .keyboard([['/new']])
-          .oneTime()
-          .resize(),
+      store.dispatch({
+        type: ACTIONS.HEARS_CANCEL,
+        payload: { userId },
       });
+      const { reply, buttons } = store.getUserState(userId);
+      context.reply(reply, getExtraReply(buttons));
     };
   }
 
   function hearsDoneHandler() {
-    return async function (context) {
+    return async function(context) {
       const userId = context.message.from.id;
-      const userState = store.getUserState(userId);
-      const { header, text, options } = userState;
+      const { header, text, options } = store.getUserState(userId);
       const questionId = await storage.saveQuestionWithOptions({ userId, header, text, options });
-      const reply = `Опрос <b>${header}</b> сформирован!\n`
-        + 'Принять участие можно по ссылке\n'
-        + `https://telegram.me/prefVoteBot?start=${questionId}`;
-      const type = ACTIONS.HEARS_DONE;
-      const payload = { userId, questionId, header, text, options, reply };
-      const action = { type, payload };
-      store.dispatch(action);
-      context.reply(reply, { parse_mode: 'HTML' });
+      store.dispatch({
+        type: ACTIONS.HEARS_DONE,
+        payload: { userId, questionId, header, text, options },
+      });
+      const { reply, buttons } = store.getUserState(userId);
+      context.reply(reply, getExtraReply(buttons));
     };
   }
 
   function hearsResultsHandler() {
-    return async function (context) {
+    return async function(context) {
       const userId = context.message.from.id;
-      const userState = store.getUserState(userId);
-      const { questionId, header, text } = userState;
+      const { questionId } = store.getUserState(userId);
+      const { header, text } = await storage.getQuestion(questionId);
       const optrows = await storage.getOptions(questionId);
       const rows = await storage.getRanks(questionId);
       const optionsList = optrows.map(item => item.Id);
@@ -142,147 +116,97 @@ function botHandlers(initStore, initStorage) {
           const name = optrows.filter(row => row.Id === item.id)[0].Name;
           return `${position}. ${name}`;
         });
-      let reply = `Опрос <b>${header}</b>\n${text}\n\nРезультат:\n`;
-      optionsResult.forEach(option => reply += `${option}\n`);
-      const type = ACTIONS.HEARS_RESULTS;
-      const payload = { userId, questionId };
-      const action = { type, payload };
-      store.dispatch(action);
-      context.reply(reply, { parse_mode: 'HTML' });
+      let result = `Опрос <b>${header}</b>\n${text}\n\nРезультат:\n`;
+      optionsResult.forEach(option => { result += `${option}\n`; });
+      store.dispatch({
+        type: ACTIONS.HEARS_RESULTS,
+        payload: { userId, questionId, result },
+      });
+      const { reply, buttons } = store.getUserState(userId);
+      context.reply(reply, getExtraReply(buttons));
     };
   }
 
   function onTextHandler() {
     return async function(context) {
       const userId = context.message.from.id;
-      const userState = store.getUserState(userId);
-      const { questionId, type } = userState;
       const info = context.message.text;
+      const { questionId, type } = store.getUserState(userId);
       switch (type) {
         case STATES.CREATE_HEADER: {
-          const header = info.substr(0, 63);
-          const reply = 'Отправьте текст вопроса';
-          const type = ACTIONS.CREATE_HEADER;
-          const payload = { userId, questionId, header, reply };
-          const action = { type, payload };
-          store.dispatch(action);
-          context.reply(reply, {
-            parse_mode: 'HTML',
-            ...Markup
-              .keyboard(['❌ Cancel'])
-              .oneTime()
-              .resize(),
+          store.dispatch({
+            type: ACTIONS.CREATE_HEADER,
+            payload: {
+              userId,
+              questionId,
+              header: info.substr(0, 63),
+            },
           });
+          const { reply, buttons } = store.getUserState(userId);
+          context.reply(reply, getExtraReply(buttons));
           break;
         }
 
         case STATES.CREATE_TEXT: {
-          const text = info.substr(0, 255);
-          const reply = 'Отправьте вариант ответа';
-          const type = ACTIONS.CREATE_TEXT;
-          const payload = { userId, questionId, text, reply };
-          const action = { type, payload };
-          store.dispatch(action);
-          context.reply(reply, {
-            parse_mode: 'HTML',
-            ...Markup
-              .keyboard(['❌ Cancel'])
-              .oneTime()
-              .resize(),
+          store.dispatch({
+            type: ACTIONS.CREATE_TEXT,
+            payload: {
+              userId,
+              text: info.substr(0, 255),
+            },
           });
+          const { reply, buttons } = store.getUserState(userId);
+          context.reply(reply, getExtraReply(buttons));
           break;
         }
 
         case STATES.CREATE_OPTION: {
           const option = info.substr(0, 100);
-          const reply = 'Отправьте <b>вариант</b> ответа';
-          const type = ACTIONS.CREATE_OPTION;
-          const payload = { userId, questionId, option, reply };
-          const action = { type, payload };
-          store.dispatch(action);
-          const extraReply = Markup
-              .keyboard([['✔️ Done', '❌ Cancel']])
-              .oneTime()
-              .resize();
-          extraReply.parse_mode = 'HTML';
-          context.reply(reply, extraReply);
+          store.dispatch({
+            type: ACTIONS.CREATE_OPTION,
+            payload: { userId, option },
+          });
+          const { reply, buttons } = store.getUserState(userId);
+          context.reply(reply, getExtraReply(buttons));
           break;
         }
 
         case STATES.ANSWER: {
-          const { header, text, options, clear_messages_queue } = userState;
+          const { header, text, options, optionsSelected, clear_messages_queue } = store.getUserState(userId);
           const optionIndex = options.findIndex(option => option.Name === info);
           console.log('onText optionIndex', optionIndex);
+          // WRONG_ANSWER
           if (optionIndex === -1) {
             const reply = `Простите, значения <b>${info}</b> в списке вариантов\n`
               + `<b>${header}</b>\n`
               + `${text}`;
-            const buttons = options.map(option => [option.Name]);
-            const mid = await context.reply(reply, {
-              parse_mode: 'HTML',
-              ...Markup
-                .keyboard([...buttons.map(button => [button]), ['❌ Cancel']])
-                .oneTime()
-                .resize(),
-            });
-            // const type = ACTIONS.CAST_VOTE;
-            // const payload = { userId, questionId, mid, reply };
-            // const action = { type, payload };
-            // store.dispatch(action);
-            // state[userId].mid.push(mid);
-          } else {
-            const { header, text, options, optionsSelected } = userState;
-            const selectedOption = options.splice(optionIndex, 1);
-            optionsSelected.push(...selectedOption);
-            const type = ACTIONS.CAST_VOTE;
-            const payload = { userId, questionId, info, options, optionsSelected };
-            const action = { type, payload };
-            store.dispatch(action);
-            if (options.length > 1) {
-              const buttons = options.map(option => option.Name);
-              console.log('id', context.message.message_id);
-              // await context.deleteMessage(context.message.message_id);
-              // const del = await context.deleteMessage(state[userId].voteMessageId.message_id);
-              let reply = `${header}\n${text}\nВы уже выбрали:`;
-              optionsSelected.forEach((option, index) => {
-                reply += `\n${index + 1}. ${option.Name}`;
-              });
-              const mid = await context.reply(reply, {
-                parse_mode: 'HTML',
-                ...Markup
-                  .keyboard([...buttons.map(button => [button]), ['❌ Cancel']])
-                  .oneTime()
-                  .resize(),
-              });
-              // state[userId].voteMessageId = mid;
-              // state[userId].mid.push(mid);
-            } else {
-              const selectedOption = options.pop();
-              console.log('last option', selectedOption);
-              optionsSelected.push(selectedOption);
-              await storage.saveRanks({
-                userId: userId,
-                options: optionsSelected,
-              });
-              await storage.saveStatus({
-                userId,
-                questionId,
-                status: 'ANSWERED',
-              });
-
-              let reply = `Вы завершили опрос * ${header} * \nВаш выбор:`;
-              optionsSelected.forEach((option, index) => {
-                reply += `\n${index + 1}. ${option.Name}`;
-              });
-              context.reply(reply, {
-                parse_mode: 'HTML',
-                ...Markup
-                  .keyboard([['👁 Results']])
-                  .oneTime()
-                  .resize(),
-              });
-            }
+            const buttons = [...options.map(option => [option.Name]), ['❌ Cancel']];
+            context.reply(reply, getExtraReply(buttons));
+            return;
           }
+          // RIGHT_ANSWER
+          const selectedOption = options.splice(optionIndex, 1);
+          optionsSelected.push(...selectedOption);
+          if (options.length === 1) {
+            const selectedOption = options.pop();
+            console.log('last option', selectedOption);
+            optionsSelected.push(selectedOption);
+            await storage.saveRanks({
+              userId: userId,
+              options: optionsSelected,
+            });
+            await storage.saveStatus({
+              userId,
+              questionId,
+              status: 'ANSWERED',
+            });
+          }
+          store.dispatch({
+            type: ACTIONS.CAST_VOTE,
+            payload: { userId, questionId, info, options, optionsSelected },
+          });
+          const { reply, buttons } = store.getUserState(userId);
+          context.reply(reply, getExtraReply(buttons));
         }
 
       }
@@ -295,7 +219,7 @@ function botHandlers(initStore, initStorage) {
     hearsCancelHandler,
     hearsDoneHandler,
     hearsResultsHandler,
-    onTextHandler
+    onTextHandler,
   };
 }
 
