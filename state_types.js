@@ -1,5 +1,3 @@
-'use strict';
-
 const STATES = {
   DEFAULT: 'STATE_DEFAULT',
   CREATE_HEADER: 'STATE_CREATE_HEADER',

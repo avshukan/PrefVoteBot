@@ -1,16 +1,14 @@
-'use strict';
-
 const { ACTIONS } = require('./action_types');
 const { STATES } = require('./state_types');
 const { method } = require('./method');
 const getExtraReply = require('./getExtraReply');
 
 function botHandlers(initStore, initStorage) {
-  let store = initStore;
-  let storage = initStorage;
+  const store = initStore;
+  const storage = initStorage;
 
   function startHandler() {
-    return async function(context) {
+    return async function (context) {
       const userId = context.message.from.id;
       // const userState = store.getUserState(userId);
       if (context.startPayload === '') {
@@ -47,20 +45,19 @@ function botHandlers(initStore, initStorage) {
       const replyMessage = context.reply(reply, getExtraReply(buttons));
       replyMessage
         .then(({ message_id }) => {
-          console.log('message_id', message_id);
           store.dispatch({
             type: ACTIONS.APPEND_MESSAGE_TO_QUEUE,
             payload: { userId, message_id },
           });
         })
-        .catch(error => {
+        .catch((error) => {
           console.log(error);
         });
     };
   }
 
   function commandNewHandler() {
-    return async function(context) {
+    return async function (context) {
       const userId = context.message.from.id;
       store.dispatch({
         type: ACTIONS.CREATE_VOTE,
@@ -72,7 +69,7 @@ function botHandlers(initStore, initStorage) {
   }
 
   function hearsCancelHandler() {
-    return async function(context) {
+    return async function (context) {
       const userId = context.message.from.id;
       store.dispatch({
         type: ACTIONS.HEARS_CANCEL,
@@ -84,13 +81,17 @@ function botHandlers(initStore, initStorage) {
   }
 
   function hearsDoneHandler() {
-    return async function(context) {
+    return async function (context) {
       const userId = context.message.from.id;
       const { header, text, options } = store.getUserState(userId);
-      const questionId = await storage.saveQuestionWithOptions({ userId, header, text, options });
+      const questionId = await storage.saveQuestionWithOptions({
+        userId, header, text, options,
+      });
       store.dispatch({
         type: ACTIONS.HEARS_DONE,
-        payload: { userId, questionId, header, text, options },
+        payload: {
+          userId, questionId, header, text, options,
+        },
       });
       const { reply, buttons } = store.getUserState(userId);
       context.reply(reply, getExtraReply(buttons));
@@ -98,25 +99,25 @@ function botHandlers(initStore, initStorage) {
   }
 
   function hearsResultsHandler() {
-    return async function(context) {
+    return async function (context) {
       const userId = context.message.from.id;
       const { questionId } = store.getUserState(userId);
       const { header, text } = await storage.getQuestion(questionId);
       const optrows = await storage.getOptions(questionId);
       const rows = await storage.getRanks(questionId);
-      const optionsList = optrows.map(item => item.Id);
+      const optionsList = optrows.map((item) => item.Id);
       const optionsRating = method(optionsList, rows);
       const optionsResult = optionsRating
         .sort((item1, item2) => item1.place - item2.place)
-        .map(item => {
+        .map((item) => {
           const position = (item.count === 1)
             ? (item.place + 1)
             : `${item.place + 1}-${item.place + item.count}`;
-          const name = optrows.filter(row => row.Id === item.id)[0].Name;
+          const name = optrows.filter((row) => row.Id === item.id)[0].Name;
           return `${position}. ${name}`;
         });
       let result = `Опрос <b>${header}</b>\n${text}\n\nРезультат:\n`;
-      optionsResult.forEach(option => { result += `${option}\n`; });
+      optionsResult.forEach((option) => { result += `${option}\n`; });
       store.dispatch({
         type: ACTIONS.HEARS_RESULTS,
         payload: { userId, questionId, result },
@@ -127,7 +128,7 @@ function botHandlers(initStore, initStorage) {
   }
 
   function onTextHandler() {
-    return async function(context) {
+    return async function (context) {
       const userId = context.message.from.id;
       const info = context.message.text;
       const { questionId, type } = store.getUserState(userId);
@@ -171,9 +172,8 @@ function botHandlers(initStore, initStorage) {
         }
 
         case STATES.ANSWER: {
-          const { options, optionsSelected, clear_messages_queue } = store.getUserState(userId);
-          const optionIndex = options.findIndex(option => option.Name === info);
-          console.log('onText optionIndex', optionIndex);
+          const { options, optionsSelected, clearMessagesQueue } = store.getUserState(userId);
+          const optionIndex = options.findIndex((option) => option.Name === info);
           // WRONG_ANSWER
           if (optionIndex === -1) {
             store.dispatch({
@@ -188,10 +188,10 @@ function botHandlers(initStore, initStorage) {
           const selectedOption = options.splice(optionIndex, 1);
           optionsSelected.push(...selectedOption);
           if (options.length === 1) {
-            const selectedOption = options.pop();
-            optionsSelected.push(selectedOption);
+            const lastOption = options.pop();
+            optionsSelected.push(lastOption);
             await storage.saveRanks({
-              userId: userId,
+              userId,
               options: optionsSelected,
             });
             await storage.saveStatus({
@@ -207,7 +207,6 @@ function botHandlers(initStore, initStorage) {
           const { reply, buttons } = store.getUserState(userId);
           context.reply(reply, getExtraReply(buttons));
         }
-
       }
     };
   }

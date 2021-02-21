@@ -1,5 +1,5 @@
-'use strict';
 require('dotenv').config();
+
 const {
   MYSQL_HOSTNAME,
   MYSQL_DATABASE,
@@ -21,12 +21,12 @@ const pool = mysql.createPool({
 const promisePool = pool.promise();
 
 function createDBStorage() {
-  let _pool = promisePool;
+  const storagePool = promisePool;
 
   async function getQuestion(questionId) {
     const sql = 'SELECT * FROM `prefvotebot_questions` WHERE `Id` = ?';
     const data = [questionId];
-    const [question] = await _pool.execute(sql, data);
+    const [question] = await storagePool.execute(sql, data);
     return {
       header: question[0].Header,
       text: question[0].Text,
@@ -36,17 +36,16 @@ function createDBStorage() {
   async function getQuestionStatus(questionId, userId) {
     const sql = 'SELECT * FROM `prefvotebot_statuses` WHERE `QuestionId` = ? AND `User` = ?';
     const data = [questionId, userId];
-    const result = await _pool.execute(sql, data);
+    const result = await storagePool.execute(sql, data);
     const [rows] = result;
-    if (rows.length === 0)
-      return null;
+    if (rows.length === 0) { return null; }
     return rows[0].Status;
-  };
+  }
 
   async function getOptions(questionId) {
     const sql = 'SELECT * FROM `prefvotebot_options` WHERE `QuestionId` = ?';
     const data = [questionId];
-    const [options] = await _pool.execute(sql, data);
+    const [options] = await storagePool.execute(sql, data);
     return options;
   }
 
@@ -54,8 +53,8 @@ function createDBStorage() {
     const questionSQL = 'SELECT * FROM `prefvotebot_questions` WHERE `Id` = ?';
     const optioinsSQL = 'SELECT * FROM `prefvotebot_options` WHERE `QuestionId` = ?';
     const data = [questionId];
-    const [questionRow] = await _pool.execute(questionSQL, data);
-    const [optionsRows] = await _pool.execute(optioinsSQL, data);
+    const [questionRow] = await storagePool.execute(questionSQL, data);
+    const [optionsRows] = await storagePool.execute(optioinsSQL, data);
     return {
       header: questionRow[0].Header,
       text: questionRow[0].Text,
@@ -83,34 +82,34 @@ function createDBStorage() {
         r1.OptionId,
         r2.OptionId`;
     const data = [questionId, questionId];
-    const [ranks] = await _pool.query(sql, data);
+    const [ranks] = await storagePool.query(sql, data);
     return ranks;
   }
 
-  async function saveRanks({ userId, options}) {
+  async function saveRanks({ userId, options }) {
     const sql = 'INSERT INTO `prefvotebot_ranks` (`QuestionId`, `OptionId`, `Rank`, `User`) VALUES ?';
     const data = [options.map((option, index) => [option.QuestionId, option.Id, index + 1, userId])];
-    console.log('sql', sql);
-    console.log('data', data);
-    const result = await _pool.query(sql, data);
+    const result = await storagePool.query(sql, data);
     return result;
   }
 
   async function saveStatus({ userId, questionId, status }) {
     const sql = 'INSERT INTO `prefvotebot_statuses` (`QuestionId`, `User`, `Status`) VALUES (?, ?, ?)';
     const data = [questionId, userId, status];
-    const result = await _pool.query(sql, data);
+    const result = await storagePool.query(sql, data);
     return result;
   }
 
-  async function saveQuestionWithOptions({userId, header, text, options}) {
+  async function saveQuestionWithOptions({
+    userId, header, text, options,
+  }) {
     const questionSQL = 'INSERT INTO `prefvotebot_questions` (`Header`, `Text`, `Owner`) VALUES (?, ?, ?)';
     const questionData = [header, text, userId];
-    const questionResult = await _pool.query(questionSQL, questionData);
+    const questionResult = await storagePool.query(questionSQL, questionData);
     const questionId = questionResult[0].insertId;
     const optionsSQL = 'INSERT INTO `prefvotebot_options` (`QuestionId`, `Name`) VALUES ?';
-    const optionsData = [options.map(element => [questionId, element])];
-    await _pool.query(optionsSQL, optionsData);
+    const optionsData = [options.map((element) => [questionId, element])];
+    await storagePool.query(optionsSQL, optionsData);
     return questionId;
   }
 
