@@ -5,9 +5,9 @@
 // https://metanit.com/web/nodejs/8.5.php
 // Keyboards https://github.com/telegraf/telegraf/blob/master/docs/examples/keyboard-bot.js
 
-'use strict';
 require('dotenv').config();
 const { Telegraf } = require('telegraf');
+
 const {
   TELEGRAM_TOKEN,
   // MYSQL_HOSTNAME,
@@ -17,6 +17,7 @@ const {
   // MYSQL_POOLSIZE,
 } = process.env;
 const createDBStorage = require('./storage');
+
 const storage = createDBStorage();
 
 // const mysql = require('mysql2');
@@ -42,8 +43,10 @@ bot.use(Telegraf.log());
 const initialState = {};
 const botReducer = require('./botReducer');
 const createStore = require('./createStore');
+
 const store = createStore(botReducer, initialState);
 const botHandlers = require('./botHandlers');
+
 const handlers = botHandlers(store, storage);
 
 bot.start(handlers.startHandler());
