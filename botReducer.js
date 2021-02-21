@@ -4,6 +4,8 @@ const { ACTIONS } = require('./action_types');
 const { STATES } = require('./state_types');
 
 function botReducer(state = {}, action) {
+  console.log('botReducer state', state);
+  console.log('botReducer action', action);
   switch (action.type) {
     case ACTIONS.CREATE_VOTE: {
       const { userId } = action.payload;
@@ -69,12 +71,35 @@ function botReducer(state = {}, action) {
       const {
         userId,
         questionId,
-        info,
         header,
         text,
         options,
+      } = action.payload;
+      const reply = `<b>${header}</b>\n${text}`;
+      const buttons = [...options.map(option => option.Name), '❌ Cancel'];
+      state[userId] = {
+        ...state[userId],
+        userId,
+        id: userId,
+        type: STATES.ANSWER,
+        questionId,
+        header,
+        text,
+        options,
+        optionsSelected: [],
+        reply,
+        buttons,
+      };
+      return state;
+    }
+
+    case ACTIONS.GET_OPTION: {
+      const {
+        userId,
+        options,
         optionsSelected,
       } = action.payload;
+      const { header, text } = state[userId];
       let reply;
       let buttons;
       if (options.length === 0) {
@@ -84,7 +109,7 @@ function botReducer(state = {}, action) {
         });
         buttons = ['👁 Results'];
       } else {
-        reply = `${header}\n${text}\nВы уже выбрали:`;
+        reply = `<b>${header}</b>\n${text}\nВы уже выбрали:`;
         optionsSelected.forEach((option, index) => {
           reply += `\n${index + 1}. ${option.Name}`;
         });
@@ -95,10 +120,32 @@ function botReducer(state = {}, action) {
         userId,
         id: userId,
         type: STATES.ANSWER,
-        questionId,
-        info,
         options,
         optionsSelected,
+        reply,
+        buttons,
+      };
+      return state;
+    }
+
+    case ACTIONS.GET_WRONG_OPTION: {
+      console.log('case ACTIONS.CAST_WRONG_ANSWER: {');
+      const { userId, answer } = action.payload;
+      const { header, text, options, optionsSelected } = state[userId];
+      const defaultReply = 'Простите, '
+        + (optionsSelected.findIndex(optionSelected => optionSelected.Name === answer) === -1
+          ? `значения "<b>${answer}</b>" нет в списке вариантов\n`
+          : `значение "<b>${answer}</b>" уже было выбрано вами\n`
+        )
+        + `<b>${header}</b>\n`
+        + `${text}`
+        + (optionsSelected.length === 0 ? '' : '\nВы уже выбрали:');
+      const reply = optionsSelected.reduce((acc, selectedOption, index) => `${acc}\n${index + 1}. ${selectedOption.Name}`, defaultReply);
+      const buttons = [...options.map(option => option.Name), '❌ Cancel'];
+      state[userId] = {
+        ...state[userId],
+        userId,
+        type: STATES.ANSWER,
         reply,
         buttons,
       };

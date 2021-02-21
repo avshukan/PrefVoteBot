@@ -33,17 +33,16 @@ function botHandlers(initStore, initStorage) {
       // NOT ANSWERED
       const questionWithOptions = await storage.getQuestionWithOptions(questionId);
       const { header, text, options } = questionWithOptions;
-      const type = ACTIONS.CAST_VOTE;
-      const payload = {
-        userId,
-        questionId,
-        header,
-        text,
-        options,
-        optionsSelected: [],
-      };
-      const action = { type, payload };
-      store.dispatch(action);
+      store.dispatch({
+        type: ACTIONS.CAST_VOTE,
+        payload: {
+          userId,
+          questionId,
+          header,
+          text,
+          options,
+        },
+      });
       const { reply, buttons } = store.getUserState(userId);
       const replyMessage = context.reply(reply, getExtraReply(buttons));
       replyMessage
@@ -172,15 +171,16 @@ function botHandlers(initStore, initStorage) {
         }
 
         case STATES.ANSWER: {
-          const { header, text, options, optionsSelected, clear_messages_queue } = store.getUserState(userId);
+          const { options, optionsSelected, clear_messages_queue } = store.getUserState(userId);
           const optionIndex = options.findIndex(option => option.Name === info);
           console.log('onText optionIndex', optionIndex);
           // WRONG_ANSWER
           if (optionIndex === -1) {
-            const reply = `Простите, значения <b>${info}</b> в списке вариантов\n`
-              + `<b>${header}</b>\n`
-              + `${text}`;
-            const buttons = [...options.map(option => [option.Name]), ['❌ Cancel']];
+            store.dispatch({
+              type: ACTIONS.GET_WRONG_OPTION,
+              payload: { userId, answer: info },
+            });
+            const { reply, buttons } = store.getUserState(userId);
             context.reply(reply, getExtraReply(buttons));
             return;
           }
@@ -189,7 +189,6 @@ function botHandlers(initStore, initStorage) {
           optionsSelected.push(...selectedOption);
           if (options.length === 1) {
             const selectedOption = options.pop();
-            console.log('last option', selectedOption);
             optionsSelected.push(selectedOption);
             await storage.saveRanks({
               userId: userId,
@@ -202,8 +201,8 @@ function botHandlers(initStore, initStorage) {
             });
           }
           store.dispatch({
-            type: ACTIONS.CAST_VOTE,
-            payload: { userId, questionId, info, options, optionsSelected },
+            type: ACTIONS.GET_OPTION,
+            payload: { userId, options, optionsSelected },
           });
           const { reply, buttons } = store.getUserState(userId);
           context.reply(reply, getExtraReply(buttons));
