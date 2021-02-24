@@ -1,5 +1,6 @@
 const { ACTIONS } = require('./action_types');
 const { STATES } = require('./state_types');
+
 const MOCK_MESSAGE = 'Данный функционал находится в разработке';
 
 function botReducer(state = {}, action) {
@@ -150,7 +151,7 @@ function botReducer(state = {}, action) {
     case ACTIONS.HEARS_CANCEL: {
       const { userId } = action.payload;
       let reply = 'Действие отменено';
-      const type = !!state[userId] ? state[userId].type : STATES.DEFAULT;
+      const type = state[userId] ? state[userId].type : STATES.DEFAULT;
       switch (type) {
         case STATES.CREATE_HEADER:
         case STATES.CREATE_TEXT:

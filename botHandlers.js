@@ -103,6 +103,7 @@ function botHandlers(initStore, initStorage) {
       const userId = context.message.from.id;
       const { questionId } = store.getUserState(userId);
       const { header, text } = await storage.getQuestion(questionId);
+      const { votersCount } = await storage.getVotersCount(questionId);
       const optrows = await storage.getOptions(questionId);
       const rows = await storage.getRanks(questionId);
       const optionsList = optrows.map((item) => item.Id);
@@ -116,8 +117,10 @@ function botHandlers(initStore, initStorage) {
           const name = optrows.filter((row) => row.Id === item.id)[0].Name;
           return `${position}. ${name}`;
         });
-      let result = `Опрос <b>${header}</b>\n${text}\n\nРезультат:\n`;
-      optionsResult.forEach((option) => { result += `${option}\n`; });
+      const result = optionsResult.reduce((acc, option) => `${acc}\n${option}`, `Опрос <b>${header}</b>\n`
+        + `${text}\n\n`
+        + `Приняли участие (человек): ${votersCount}\n`
+        + 'Результат:');
       store.dispatch({
         type: ACTIONS.HEARS_RESULTS,
         payload: { userId, questionId, result },
