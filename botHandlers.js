@@ -2,7 +2,6 @@ const { ACTIONS } = require('./action_types');
 const { STATES } = require('./state_types');
 const { method } = require('./method');
 const getExtraReply = require('./getExtraReply');
-const MOCK_MESSAGE = 'Данные функционал находится в разработке';
 
 function botHandlers(initStore, initStorage) {
   const store = initStore;
@@ -213,31 +212,73 @@ function botHandlers(initStore, initStorage) {
   }
 
   function commandCreatedByMeHandler(context) {
-    context.reply(MOCK_MESSAGE);
+    const userId = context.message.from.id;
+    store.dispatch({
+      type: ACTIONS.MOCK,
+      payload: { userId },
+    });
+    const { reply, buttons } = store.getUserState(userId);
+    context.reply(reply, getExtraReply(buttons));
   }
 
   function commandVotedByMeHandler(context) {
-    context.reply(MOCK_MESSAGE);
+    const userId = context.message.from.id;
+    store.dispatch({
+      type: ACTIONS.MOCK,
+      payload: { userId },
+    });
+    const { reply, buttons } = store.getUserState(userId);
+    context.reply(reply, getExtraReply(buttons));
   }
 
   function commandFindHandler(context) {
-    context.reply(MOCK_MESSAGE);
+    const userId = context.message.from.id;
+    store.dispatch({
+      type: ACTIONS.MOCK,
+      payload: { userId },
+    });
+    const { reply, buttons } = store.getUserState(userId);
+    context.reply(reply, getExtraReply(buttons));
   }
 
   function commandHelpHandler(context) {
-    context.reply(MOCK_MESSAGE);
+    const userId = context.message.from.id;
+    store.dispatch({
+      type: ACTIONS.MOCK,
+      payload: { userId },
+    });
+    const { reply, buttons } = store.getUserState(userId);
+    context.reply(reply, getExtraReply(buttons));
   }
 
   function commandSettingsHandler(context) {
-    context.reply(MOCK_MESSAGE);
+    const userId = context.message.from.id;
+    store.dispatch({
+      type: ACTIONS.MOCK,
+      payload: { userId },
+    });
+    const { reply, buttons } = store.getUserState(userId);
+    context.reply(reply, getExtraReply(buttons));
   }
 
   function commandRandomHandler(context) {
-    context.reply(MOCK_MESSAGE);
+    const userId = context.message.from.id;
+    store.dispatch({
+      type: ACTIONS.MOCK,
+      payload: { userId },
+    });
+    const { reply, buttons } = store.getUserState(userId);
+    context.reply(reply, getExtraReply(buttons));
   }
 
   function commandPopularHandler(context) {
-    context.reply(MOCK_MESSAGE);
+    const userId = context.message.from.id;
+    store.dispatch({
+      type: ACTIONS.MOCK,
+      payload: { userId },
+    });
+    const { reply, buttons } = store.getUserState(userId);
+    context.reply(reply, getExtraReply(buttons));
   }
 
   return {

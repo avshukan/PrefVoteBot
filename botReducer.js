@@ -1,5 +1,6 @@
 const { ACTIONS } = require('./action_types');
 const { STATES } = require('./state_types');
+const MOCK_MESSAGE = 'Данный функционал находится в разработке';
 
 function botReducer(state = {}, action) {
   switch (action.type) {
@@ -149,7 +150,8 @@ function botReducer(state = {}, action) {
     case ACTIONS.HEARS_CANCEL: {
       const { userId } = action.payload;
       let reply = 'Действие отменено';
-      switch (state[userId].type) {
+      const type = !!state[userId] ? state[userId].type : STATES.DEFAULT;
+      switch (type) {
         case STATES.CREATE_HEADER:
         case STATES.CREATE_TEXT:
         case STATES.CREATE_OPTION:
@@ -211,6 +213,17 @@ function botReducer(state = {}, action) {
       state[userId] = {
         ...state[userId],
         clearMessagesQueue: [...(state[userId].clearMessagesQueue || []), message_id],
+      };
+      return state;
+    }
+
+    case ACTIONS.MOCK: {
+      const { userId } = action.payload;
+      state[userId] = {
+        ...state[userId],
+        type: STATES.DEFAULT,
+        reply: MOCK_MESSAGE,
+        buttons: ['/new'],
       };
       return state;
     }

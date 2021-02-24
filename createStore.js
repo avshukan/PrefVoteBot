@@ -1,3 +1,5 @@
+const { STATES } = require('./state_types');
+
 function createStore(storeReducer, storeState = {}) {
   let state = storeState;
 
@@ -14,6 +16,7 @@ function createStore(storeReducer, storeState = {}) {
     if (!state[userId]) {
       return {
         userId,
+        type: STATES.DEFAULT,
         clearMessagesQueue: [],
       };
     }
