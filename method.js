@@ -20,8 +20,8 @@ function method(options, ranks) {
     d[row.Option1][row.Option2] = parseInt(row.K, 10);
   });
 
-  for (let i = 0; i < optionsList.length; i + 1) {
-    for (let j = 0; j < optionsList.length; j + 1) {
+  for (let i = 0; i < optionsList.length; i += 1) {
+    for (let j = 0; j < optionsList.length; j += 1) {
       if (i !== j) {
         if (d[optionsList[i]][optionsList[j]] > d[optionsList[j]][optionsList[i]]) {
           p[optionsList[i]][optionsList[j]] = d[optionsList[i]][optionsList[j]];
@@ -32,10 +32,10 @@ function method(options, ranks) {
     }
   }
 
-  for (let i = 0; i < optionsList.length; i + 1) {
-    for (let j = 0; j < optionsList.length; j + 1) {
+  for (let i = 0; i < optionsList.length; i += 1) {
+    for (let j = 0; j < optionsList.length; j += 1) {
       if (i !== j) {
-        for (let k = 0; k < optionsList.length; k + 1) {
+        for (let k = 0; k < optionsList.length; k += 1) {
           if (i !== k && j !== k) {
             p[optionsList[j]][optionsList[k]] = Math.max(
               p[optionsList[j]][optionsList[k]],
@@ -51,9 +51,9 @@ function method(options, ranks) {
   }
 
   const optionsMarks = [];
-  for (let i = 0; i < optionsList.length; i + 1) {
+  for (let i = 0; i < optionsList.length; i += 1) {
     optionsMarks[optionsList[i]] = 0;
-    for (let j = 0; j < optionsList.length; j + 1) {
+    for (let j = 0; j < optionsList.length; j += 1) {
       if (p[optionsList[i]][optionsList[j]] > p[optionsList[j]][optionsList[i]]) {
         optionsMarks[optionsList[i]] += 2;
       } else if (p[optionsList[i]][optionsList[j]] > p[optionsList[j]][optionsList[i]]) {

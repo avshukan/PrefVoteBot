@@ -62,6 +62,13 @@ function createDBStorage() {
     };
   }
 
+  async function getVotersCount(questionId) {
+    const sql = 'SELECT COUNT(DISTINCT User) AS VotersCount FROM `prefvotebot_ranks` WHERE `QuestionId` = ?';
+    const data = [questionId];
+    const [result] = await storagePool.execute(sql, data);
+    return { votersCount: result[0].VotersCount };
+  }
+
   async function getRanks(questionId) {
     const sql = `SELECT
         r1.OptionId Option1,
@@ -118,6 +125,7 @@ function createDBStorage() {
     getQuestionStatus,
     getQuestionWithOptions,
     getOptions,
+    getVotersCount,
     getRanks,
     saveQuestionWithOptions,
     saveRanks,

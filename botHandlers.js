@@ -13,8 +13,8 @@ function botHandlers(initStore, initStorage) {
       // const userState = store.getUserState(userId);
       if (context.startPayload === '') {
         console.log('context.startPayload === \'\' => return;');
-        console.log('Здесь должно быть какое-о приветственное сообщение');
-        const reply = 'Здесь должно быть какое-о приветственное сообщение';
+        console.log('Здесь должно быть какое-то приветственное сообщение');
+        const reply = 'Здесь должно быть какое-то приветственное сообщение';
         context.replyWithMarkdown(reply);
         return;
       }
@@ -84,17 +84,26 @@ function botHandlers(initStore, initStorage) {
     return async function (context) {
       const userId = context.message.from.id;
       const { header, text, options } = store.getUserState(userId);
-      const questionId = await storage.saveQuestionWithOptions({
-        userId, header, text, options,
-      });
-      store.dispatch({
-        type: ACTIONS.HEARS_DONE,
-        payload: {
-          userId, questionId, header, text, options,
-        },
-      });
-      const { reply, buttons } = store.getUserState(userId);
-      context.reply(reply, getExtraReply(buttons));
+      try {
+        const questionId = await storage.saveQuestionWithOptions({
+          userId, header, text, options,
+        });
+        store.dispatch({
+          type: ACTIONS.HEARS_DONE,
+          payload: {
+            userId, questionId, header, text, options,
+          },
+        });
+        const { reply, buttons } = store.getUserState(userId);
+        context.reply(reply, getExtraReply(buttons));
+      } catch {
+        store.dispatch({
+          type: ACTIONS.MOCK,
+          payload: { userId },
+        });
+        const { reply, buttons } = store.getUserState(userId);
+        context.reply('Извините, произошла ошибка. Что-то пошло не так...', getExtraReply(buttons));
+      }
     };
   }
 
@@ -103,6 +112,7 @@ function botHandlers(initStore, initStorage) {
       const userId = context.message.from.id;
       const { questionId } = store.getUserState(userId);
       const { header, text } = await storage.getQuestion(questionId);
+      const { votersCount } = await storage.getVotersCount(questionId);
       const optrows = await storage.getOptions(questionId);
       const rows = await storage.getRanks(questionId);
       const optionsList = optrows.map((item) => item.Id);
@@ -116,8 +126,10 @@ function botHandlers(initStore, initStorage) {
           const name = optrows.filter((row) => row.Id === item.id)[0].Name;
           return `${position}. ${name}`;
         });
-      let result = `Опрос <b>${header}</b>\n${text}\n\nРезультат:\n`;
-      optionsResult.forEach((option) => { result += `${option}\n`; });
+      const result = optionsResult.reduce((acc, option) => `${acc}\n${option}`, `Опрос <b>${header}</b>\n`
+        + `${text}\n\n`
+        + `Приняли участие (человек): ${votersCount}\n`
+        + 'Результат:');
       store.dispatch({
         type: ACTIONS.HEARS_RESULTS,
         payload: { userId, questionId, result },
@@ -211,9 +223,97 @@ function botHandlers(initStore, initStorage) {
     };
   }
 
+  function commandAboutHandler(context) {
+    const userId = context.message.from.id;
+    store.dispatch({
+      type: ACTIONS.SHOW_ABOUT,
+      payload: { userId },
+    });
+    const { reply, buttons } = store.getUserState(userId);
+    context.reply(reply, getExtraReply(buttons));
+  }
+
+  function commandCreatedByMeHandler(context) {
+    const userId = context.message.from.id;
+    store.dispatch({
+      type: ACTIONS.MOCK,
+      payload: { userId },
+    });
+    const { reply, buttons } = store.getUserState(userId);
+    context.reply(reply, getExtraReply(buttons));
+  }
+
+  function commandVotedByMeHandler(context) {
+    const userId = context.message.from.id;
+    store.dispatch({
+      type: ACTIONS.MOCK,
+      payload: { userId },
+    });
+    const { reply, buttons } = store.getUserState(userId);
+    context.reply(reply, getExtraReply(buttons));
+  }
+
+  function commandFindHandler(context) {
+    const userId = context.message.from.id;
+    store.dispatch({
+      type: ACTIONS.MOCK,
+      payload: { userId },
+    });
+    const { reply, buttons } = store.getUserState(userId);
+    context.reply(reply, getExtraReply(buttons));
+  }
+
+  function commandHelpHandler(context) {
+    const userId = context.message.from.id;
+    store.dispatch({
+      type: ACTIONS.MOCK,
+      payload: { userId },
+    });
+    const { reply, buttons } = store.getUserState(userId);
+    context.reply(reply, getExtraReply(buttons));
+  }
+
+  function commandSettingsHandler(context) {
+    const userId = context.message.from.id;
+    store.dispatch({
+      type: ACTIONS.MOCK,
+      payload: { userId },
+    });
+    const { reply, buttons } = store.getUserState(userId);
+    context.reply(reply, getExtraReply(buttons));
+  }
+
+  function commandRandomHandler(context) {
+    const userId = context.message.from.id;
+    store.dispatch({
+      type: ACTIONS.MOCK,
+      payload: { userId },
+    });
+    const { reply, buttons } = store.getUserState(userId);
+    context.reply(reply, getExtraReply(buttons));
+  }
+
+  function commandPopularHandler(context) {
+    const userId = context.message.from.id;
+    store.dispatch({
+      type: ACTIONS.MOCK,
+      payload: { userId },
+    });
+    const { reply, buttons } = store.getUserState(userId);
+    context.reply(reply, getExtraReply(buttons));
+  }
+
   return {
     startHandler,
+    commandAboutHandler,
+    commandCreatedByMeHandler,
+    commandFindHandler,
+    commandHelpHandler,
     commandNewHandler,
+    commandPopularHandler,
+    commandRandomHandler,
+    commandSettingsHandler,
+    commandVotedByMeHandler,
     hearsCancelHandler,
     hearsDoneHandler,
     hearsResultsHandler,

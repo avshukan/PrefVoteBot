@@ -49,8 +49,27 @@ const botHandlers = require('./botHandlers');
 
 const handlers = botHandlers(store, storage);
 
+// start - приветственное сообщение
+// new - создать опрос
+// createdbyme - опросы, созданные мной
+// votedbyme - опросы, в которых я принял участие
+// find - поиск опроса
+// about - информация о боте
+// help - в случае проблем
+// settings - настройки
+// random - случайный опрос
+// popular - самые популярные опросы
+
 bot.start(handlers.startHandler());
+bot.command('createdbyme', handlers.commandCreatedByMeHandler);
+bot.command('about', handlers.commandAboutHandler);
+bot.command('find', handlers.commandFindHandler);
+bot.command('help', handlers.commandHelpHandler);
 bot.command('new', handlers.commandNewHandler());
+bot.command('popular', handlers.commandPopularHandler);
+bot.command('random', handlers.commandRandomHandler);
+bot.command('settings', handlers.commandSettingsHandler);
+bot.command('votedbyme', handlers.commandVotedByMeHandler);
 bot.hears('❌ Cancel', handlers.hearsCancelHandler());
 bot.hears('✔️ Done', handlers.hearsDoneHandler());
 bot.hears('👁 Results', handlers.hearsResultsHandler());

@@ -1,6 +1,8 @@
 const { ACTIONS } = require('./action_types');
 const { STATES } = require('./state_types');
 
+const MOCK_MESSAGE = 'Данный функционал находится в разработке';
+
 function botReducer(state = {}, action) {
   switch (action.type) {
     case ACTIONS.CREATE_VOTE: {
@@ -149,7 +151,8 @@ function botReducer(state = {}, action) {
     case ACTIONS.HEARS_CANCEL: {
       const { userId } = action.payload;
       let reply = 'Действие отменено';
-      switch (state[userId].type) {
+      const type = state[userId] ? state[userId].type : STATES.DEFAULT;
+      switch (type) {
         case STATES.CREATE_HEADER:
         case STATES.CREATE_TEXT:
         case STATES.CREATE_OPTION:
@@ -211,6 +214,32 @@ function botReducer(state = {}, action) {
       state[userId] = {
         ...state[userId],
         clearMessagesQueue: [...(state[userId].clearMessagesQueue || []), message_id],
+      };
+      return state;
+    }
+
+    case ACTIONS.SHOW_ABOUT: {
+      const { userId } = action.payload;
+      state[userId] = {
+        ...state[userId],
+        type: STATES.DEFAULT,
+        reply:
+        'В преференциальной системе участник голосования выбирает не один вариант ответа, а расставляет их в порядке приоритета, сначала начиная с наиболее предпочтительного варианта.\n'
+        + 'Для подведения итогов ботом используется метод подсчёта, разработанный Маркусом Шульце.\n\n'
++ 'https://ru.wikipedia.org/wiki/Преференциальное_голосование\n'
+        + 'https://ru.wikipedia.org/wiki/Метод_Шульце',
+        buttons: ['/new'],
+      };
+      return state;
+    }
+
+    case ACTIONS.MOCK: {
+      const { userId } = action.payload;
+      state[userId] = {
+        ...state[userId],
+        type: STATES.DEFAULT,
+        reply: MOCK_MESSAGE,
+        buttons: ['/new'],
       };
       return state;
     }
