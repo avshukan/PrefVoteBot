@@ -218,6 +218,21 @@ function botReducer(state = {}, action) {
       return state;
     }
 
+    case ACTIONS.SHOW_ABOUT: {
+      const { userId } = action.payload;
+      state[userId] = {
+        ...state[userId],
+        type: STATES.DEFAULT,
+        reply:
+        'В преференциальной системе участник голосования выбирает не один вариант ответа, а расставляет их в порядке приоритета, сначала начиная с наиболее предпочтительного варианта.\n'
+        + 'Для подведения итогов ботом используется метод подсчёта, разработанный Маркусом Шульце.\n\n'
++ 'https://ru.wikipedia.org/wiki/Преференциальное_голосование\n'
+        + 'https://ru.wikipedia.org/wiki/Метод_Шульце',
+        buttons: ['/new'],
+      };
+      return state;
+    }
+
     case ACTIONS.MOCK: {
       const { userId } = action.payload;
       state[userId] = {
