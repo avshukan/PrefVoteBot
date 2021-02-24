@@ -2,6 +2,7 @@ const { ACTIONS } = require('./action_types');
 const { STATES } = require('./state_types');
 const { method } = require('./method');
 const getExtraReply = require('./getExtraReply');
+const MOCK_MESSAGE = 'Данные функционал находится в разработке';
 
 function botHandlers(initStore, initStorage) {
   const store = initStore;
@@ -13,8 +14,8 @@ function botHandlers(initStore, initStorage) {
       // const userState = store.getUserState(userId);
       if (context.startPayload === '') {
         console.log('context.startPayload === \'\' => return;');
-        console.log('Здесь должно быть какое-о приветственное сообщение');
-        const reply = 'Здесь должно быть какое-о приветственное сообщение';
+        console.log('Здесь должно быть какое-то приветственное сообщение');
+        const reply = 'Здесь должно быть какое-то приветственное сообщение';
         context.replyWithMarkdown(reply);
         return;
       }
@@ -211,9 +212,44 @@ function botHandlers(initStore, initStorage) {
     };
   }
 
+  function commandCreatedByMeHandler(context) {
+    context.reply(MOCK_MESSAGE);
+  }
+
+  function commandVotedByMeHandler(context) {
+    context.reply(MOCK_MESSAGE);
+  }
+
+  function commandFindHandler(context) {
+    context.reply(MOCK_MESSAGE);
+  }
+
+  function commandHelpHandler(context) {
+    context.reply(MOCK_MESSAGE);
+  }
+
+  function commandSettingsHandler(context) {
+    context.reply(MOCK_MESSAGE);
+  }
+
+  function commandRandomHandler(context) {
+    context.reply(MOCK_MESSAGE);
+  }
+
+  function commandPopularHandler(context) {
+    context.reply(MOCK_MESSAGE);
+  }
+
   return {
     startHandler,
+    commandCreatedByMeHandler,
+    commandFindHandler,
+    commandHelpHandler,
     commandNewHandler,
+    commandPopularHandler,
+    commandRandomHandler,
+    commandSettingsHandler,
+    commandVotedByMeHandler,
     hearsCancelHandler,
     hearsDoneHandler,
     hearsResultsHandler,
