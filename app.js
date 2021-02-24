@@ -62,6 +62,7 @@ const handlers = botHandlers(store, storage);
 
 bot.start(handlers.startHandler());
 bot.command('createdbyme', handlers.commandCreatedByMeHandler);
+bot.command('about', handlers.commandAboutHandler);
 bot.command('find', handlers.commandFindHandler);
 bot.command('help', handlers.commandHelpHandler);
 bot.command('new', handlers.commandNewHandler());

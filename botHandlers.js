@@ -84,17 +84,26 @@ function botHandlers(initStore, initStorage) {
     return async function (context) {
       const userId = context.message.from.id;
       const { header, text, options } = store.getUserState(userId);
-      const questionId = await storage.saveQuestionWithOptions({
-        userId, header, text, options,
-      });
-      store.dispatch({
-        type: ACTIONS.HEARS_DONE,
-        payload: {
-          userId, questionId, header, text, options,
-        },
-      });
-      const { reply, buttons } = store.getUserState(userId);
-      context.reply(reply, getExtraReply(buttons));
+      try {
+        const questionId = await storage.saveQuestionWithOptions({
+          userId, header, text, options,
+        });
+        store.dispatch({
+          type: ACTIONS.HEARS_DONE,
+          payload: {
+            userId, questionId, header, text, options,
+          },
+        });
+        const { reply, buttons } = store.getUserState(userId);
+        context.reply(reply, getExtraReply(buttons));
+      } catch {
+        store.dispatch({
+          type: ACTIONS.MOCK,
+          payload: { userId },
+        });
+        const { reply, buttons } = store.getUserState(userId);
+        context.reply('Извините, произошла ошибка. Что-то пошло не так...', getExtraReply(buttons));
+      }
     };
   }
 
@@ -214,6 +223,16 @@ function botHandlers(initStore, initStorage) {
     };
   }
 
+  function commandAboutHandler(context) {
+    const userId = context.message.from.id;
+    store.dispatch({
+      type: ACTIONS.SHOW_ABOUT,
+      payload: { userId },
+    });
+    const { reply, buttons } = store.getUserState(userId);
+    context.reply(reply, getExtraReply(buttons));
+  }
+
   function commandCreatedByMeHandler(context) {
     const userId = context.message.from.id;
     store.dispatch({
@@ -286,6 +305,7 @@ function botHandlers(initStore, initStorage) {
 
   return {
     startHandler,
+    commandAboutHandler,
     commandCreatedByMeHandler,
     commandFindHandler,
     commandHelpHandler,
