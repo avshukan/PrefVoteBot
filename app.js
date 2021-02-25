@@ -1,5 +1,3 @@
-// https://telegram.me/prefVoteBot?start=20
-// https://www.npmjs.com/package/telegraf
 // https://habr.com/ru/post/483660/
 // https://techrocks.ru/2017/10/07/how-to-build-a-simple-telegram-bot-on-node-js/
 // https://metanit.com/web/nodejs/8.5.php
