@@ -20,7 +20,11 @@ function botReducer(state = {}, action) {
     }
 
     case ACTIONS.CREATE_HEADER: {
-      const { userId, questionId, header } = action.payload;
+      const {
+        userId, questionId, header, userMessageId,
+      } = action.payload;
+      const reply = `Заголовок: <b>${header}</b>\n\n`
+      + 'Отправьте текст вопроса';
       state[userId] = {
         ...state[userId],
         userId,
@@ -28,14 +32,18 @@ function botReducer(state = {}, action) {
         type: STATES.CREATE_TEXT,
         questionId,
         header,
-        reply: 'Отправьте текст вопроса',
+        clearMessagesQueue: [...(state[userId].clearMessagesQueue || []), userMessageId],
+        reply,
         buttons: ['❌ Cancel'],
       };
       return state;
     }
 
     case ACTIONS.CREATE_TEXT: {
-      const { userId, text } = action.payload;
+      const { userId, text, userMessageId } = action.payload;
+      const reply = `Заголовок: <b>${state[userId].header}</b>\n`
+      + `Вопрос: ${text}\n\n`
+      + 'Отправьте вариант ответа';
       state[userId] = {
         ...state[userId],
         userId,
@@ -43,15 +51,20 @@ function botReducer(state = {}, action) {
         type: STATES.CREATE_OPTION,
         text,
         options: [],
-        reply: 'Отправьте вариант ответа',
+        clearMessagesQueue: [...(state[userId].clearMessagesQueue || []), userMessageId],
+        reply,
         buttons: ['❌ Cancel'],
       };
       return state;
     }
 
     case ACTIONS.CREATE_OPTION: {
-      const { userId, option } = action.payload;
+      const { userId, option, userMessageId } = action.payload;
       const options = [...(state[userId].options || []), option];
+      const defaultReply = `Заголовок: <b>${state[userId].header}</b>\n`
+      + `Вопрос: ${state[userId].text}\n`
+      + 'Варианты ответов:';
+      const reply = options.reduce((acc, item) => `${acc}\n - ${item}`, defaultReply);
       const buttons = (options.length > 1) ? ['✔️ Done', '❌ Cancel'] : ['❌ Cancel'];
       state[userId] = {
         ...state[userId],
@@ -59,7 +72,8 @@ function botReducer(state = {}, action) {
         id: userId,
         type: STATES.CREATE_OPTION,
         options,
-        reply: 'Отправьте вариант ответа',
+        clearMessagesQueue: [...(state[userId].clearMessagesQueue || []), userMessageId],
+        reply: `${reply}\n\nОтправьте вариант ответа`,
         buttons,
       };
       return state;
@@ -211,10 +225,19 @@ function botReducer(state = {}, action) {
     }
 
     case ACTIONS.APPEND_MESSAGE_TO_QUEUE: {
-      const { userId, message_id } = action.payload;
+      const { userId, messageId } = action.payload;
       state[userId] = {
         ...state[userId],
-        clearMessagesQueue: [...(state[userId].clearMessagesQueue || []), message_id],
+        clearMessagesQueue: [...(state[userId].clearMessagesQueue || []), messageId],
+      };
+      return state;
+    }
+
+    case ACTIONS.REMOVE_MESSAGE_FROM_QUEUE: {
+      const { userId } = action.payload;
+      state[userId] = {
+        ...state[userId],
+        clearMessagesQueue: [],
       };
       return state;
     }

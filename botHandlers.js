@@ -7,6 +7,17 @@ function botHandlers(initStore, initStorage) {
   const store = initStore;
   const storage = initStorage;
 
+  function clearMessages(context) {
+    const userId = context.message.from.id;
+    const userState = store.getUserState(userId);
+    const clearMessagesQueue = userState.clearMessagesQueue ? [...userState.clearMessagesQueue] : [];
+    store.dispatch({
+      type: ACTIONS.REMOVE_MESSAGE_FROM_QUEUE,
+      payload: { userId },
+    });
+    clearMessagesQueue.forEach((message) => context.deleteMessage(message));
+  }
+
   function startHandler() {
     return async function (context) {
       const userId = context.message.from.id;
@@ -42,12 +53,12 @@ function botHandlers(initStore, initStorage) {
         },
       });
       const { reply, buttons } = store.getUserState(userId);
-      const replyMessage = context.reply(reply, getExtraReply(buttons));
-      replyMessage
-        .then(({ message_id }) => {
+      context
+        .reply(reply, getExtraReply(buttons))
+        .then((message) => {
           store.dispatch({
             type: ACTIONS.APPEND_MESSAGE_TO_QUEUE,
-            payload: { userId, message_id },
+            payload: { userId, messageId: message.message_id },
           });
         })
         .catch((error) => {
@@ -64,7 +75,17 @@ function botHandlers(initStore, initStorage) {
         payload: { userId },
       });
       const { reply, buttons } = store.getUserState(userId);
-      context.reply(reply, getExtraReply(buttons));
+      context
+        .reply(reply, getExtraReply(buttons))
+        .then((message) => {
+          store.dispatch({
+            type: ACTIONS.APPEND_MESSAGE_TO_QUEUE,
+            payload: { userId, messageId: message.message_id },
+          });
+        })
+        .catch((error) => {
+          console.log(error);
+        });
     };
   }
 
@@ -110,38 +131,49 @@ function botHandlers(initStore, initStorage) {
   function hearsResultsHandler() {
     return async function (context) {
       const userId = context.message.from.id;
-      const { questionId } = store.getUserState(userId);
-      const { header, text } = await storage.getQuestion(questionId);
-      const { votersCount } = await storage.getVotersCount(questionId);
-      const optrows = await storage.getOptions(questionId);
-      const rows = await storage.getRanks(questionId);
-      const optionsList = optrows.map((item) => item.Id);
-      const optionsRating = method(optionsList, rows);
-      const optionsResult = optionsRating
-        .sort((item1, item2) => item1.place - item2.place)
-        .map((item) => {
-          const position = (item.count === 1)
-            ? (item.place + 1)
-            : `${item.place + 1}-${item.place + item.count}`;
-          const name = optrows.filter((row) => row.Id === item.id)[0].Name;
-          return `${position}. ${name}`;
-        });
-      const result = optionsResult.reduce((acc, option) => `${acc}\n${option}`, `Опрос <b>${header}</b>\n`
+      try {
+        const { questionId } = store.getUserState(userId);
+        const { header, text } = await storage.getQuestion(questionId);
+        const { votersCount } = await storage.getVotersCount(questionId);
+        const optrows = await storage.getOptions(questionId);
+        const rows = await storage.getRanks(questionId);
+        const optionsList = optrows.map((item) => item.Id);
+        const optionsRating = method(optionsList, rows);
+        const optionsResult = optionsRating
+          .sort((item1, item2) => item1.place - item2.place)
+          .map((item) => {
+            const position = (item.count === 1)
+              ? (item.place + 1)
+              : `${item.place + 1}-${item.place + item.count}`;
+            const name = optrows.filter((row) => row.Id === item.id)[0].Name;
+            return `${position}. ${name}`;
+          });
+        const result = optionsResult.reduce((acc, option) => `${acc}\n${option}`, `Опрос <b>${header}</b>\n`
         + `${text}\n\n`
         + `Приняли участие (человек): ${votersCount}\n`
         + 'Результат:');
-      store.dispatch({
-        type: ACTIONS.HEARS_RESULTS,
-        payload: { userId, questionId, result },
-      });
-      const { reply, buttons } = store.getUserState(userId);
-      context.reply(reply, getExtraReply(buttons));
+        store.dispatch({
+          type: ACTIONS.HEARS_RESULTS,
+          payload: { userId, questionId, result },
+        });
+        const { reply, buttons } = store.getUserState(userId);
+        context.reply(reply, getExtraReply(buttons));
+        console.log(userId, context);
+      } catch {
+        store.dispatch({
+          type: ACTIONS.MOCK,
+          payload: { userId },
+        });
+        const { reply, buttons } = store.getUserState(userId);
+        context.reply('Извините, произошла ошибка. Что-то пошло не так...', getExtraReply(buttons));
+      }
     };
   }
 
   function onTextHandler() {
     return async function (context) {
       const userId = context.message.from.id;
+      const userMessageId = context.message.message_id;
       const info = context.message.text;
       const { questionId, type } = store.getUserState(userId);
       switch (type) {
@@ -152,23 +184,43 @@ function botHandlers(initStore, initStorage) {
               userId,
               questionId,
               header: info.substr(0, 63),
+              userMessageId,
             },
           });
           const { reply, buttons } = store.getUserState(userId);
-          context.reply(reply, getExtraReply(buttons));
+          clearMessages(context);
+          context
+            .reply(reply, getExtraReply(buttons))
+            .then((message) => {
+              store.dispatch({
+                type: ACTIONS.APPEND_MESSAGE_TO_QUEUE,
+                payload: { userId, messageId: message.message_id },
+              });
+            })
+            .catch((error) => {
+              console.log(error);
+            });
           break;
         }
 
         case STATES.CREATE_TEXT: {
           store.dispatch({
             type: ACTIONS.CREATE_TEXT,
-            payload: {
-              userId,
-              text: info.substr(0, 255),
-            },
+            payload: { userId, text: info.substr(0, 255), userMessageId },
           });
           const { reply, buttons } = store.getUserState(userId);
-          context.reply(reply, getExtraReply(buttons));
+          clearMessages(context);
+          context
+            .reply(reply, getExtraReply(buttons))
+            .then((message) => {
+              store.dispatch({
+                type: ACTIONS.APPEND_MESSAGE_TO_QUEUE,
+                payload: { userId, messageId: message.message_id },
+              });
+            })
+            .catch((error) => {
+              console.log(error);
+            });
           break;
         }
 
@@ -176,15 +228,26 @@ function botHandlers(initStore, initStorage) {
           const option = info.substr(0, 100);
           store.dispatch({
             type: ACTIONS.CREATE_OPTION,
-            payload: { userId, option },
+            payload: { userId, option, userMessageId },
           });
           const { reply, buttons } = store.getUserState(userId);
-          context.reply(reply, getExtraReply(buttons));
+          clearMessages(context);
+          context
+            .reply(reply, getExtraReply(buttons))
+            .then((message) => {
+              store.dispatch({
+                type: ACTIONS.APPEND_MESSAGE_TO_QUEUE,
+                payload: { userId, messageId: message.message_id },
+              });
+            })
+            .catch((error) => {
+              console.log(error);
+            });
           break;
         }
 
         case STATES.ANSWER: {
-          const { options, optionsSelected, clearMessagesQueue } = store.getUserState(userId);
+          const { options, optionsSelected } = store.getUserState(userId);
           const optionIndex = options.findIndex((option) => option.Name === info);
           // WRONG_ANSWER
           if (optionIndex === -1) {
@@ -193,10 +256,25 @@ function botHandlers(initStore, initStorage) {
               payload: { userId, answer: info },
             });
             const { reply, buttons } = store.getUserState(userId);
-            context.reply(reply, getExtraReply(buttons));
+            clearMessages(context);
+            context
+              .reply(reply, getExtraReply(buttons))
+              .then((message) => {
+                store.dispatch({
+                  type: ACTIONS.APPEND_MESSAGE_TO_QUEUE,
+                  payload: { userId, messageId: message.message_id },
+                });
+              })
+              .catch((error) => {
+                console.log(error);
+              });
             return;
           }
           // RIGHT_ANSWER
+          store.dispatch({
+            type: ACTIONS.APPEND_MESSAGE_TO_QUEUE,
+            payload: { userId, messageId: userMessageId },
+          });
           const selectedOption = options.splice(optionIndex, 1);
           optionsSelected.push(...selectedOption);
           if (options.length === 1) {
@@ -217,7 +295,18 @@ function botHandlers(initStore, initStorage) {
             payload: { userId, options, optionsSelected },
           });
           const { reply, buttons } = store.getUserState(userId);
-          context.reply(reply, getExtraReply(buttons));
+          clearMessages(context);
+          context
+            .reply(reply, getExtraReply(buttons))
+            .then((message) => {
+              store.dispatch({
+                type: ACTIONS.APPEND_MESSAGE_TO_QUEUE,
+                payload: { userId, messageId: message.message_id },
+              });
+            })
+            .catch((error) => {
+              console.log(error);
+            });
         }
       }
     };
