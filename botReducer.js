@@ -1,6 +1,7 @@
 const { ACTIONS } = require('./action_types');
 const { STATES } = require('./state_types');
 
+const { DEEPLINK_TOKEN } = process.env;
 const MOCK_MESSAGE = 'Данный функционал находится в разработке';
 
 function botReducer(state = {}, action) {
@@ -179,7 +180,7 @@ function botReducer(state = {}, action) {
       } = action.payload;
       const reply = `Опрос <b>${header}</b> сформирован!\n`
         + 'Принять участие можно по ссылке\n'
-        + `https://telegram.me/prefVoteBot?start=${questionId}`;
+        + `${DEEPLINK_TOKEN}start=${questionId}`;
       state[userId] = {
         ...state[userId],
         userId,
