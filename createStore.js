@@ -4,6 +4,8 @@ function createStore(storeReducer, storeState = {}) {
   let state = storeState;
 
   function dispatch(action) {
+    console.log('state', state);
+    console.log('action', action);
     state = storeReducer(state, action);
     return state;
   }
