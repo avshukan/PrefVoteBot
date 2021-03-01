@@ -4,6 +4,7 @@ const { BUTTONS } = require('./button_types');
 
 const { DEEPLINK_TOKEN } = process.env;
 const MOCK_MESSAGE = 'Данный функционал находится в разработке';
+const ERROR_MESSAGE = 'Извините, произошла ошибка. Что-то пошло не так...';
 
 function botReducer(state, action) {
   switch (action.type) {
@@ -268,6 +269,18 @@ function botReducer(state, action) {
           + 'Для подведения итогов ботом используется метод подсчёта, разработанный Маркусом Шульце.\n\n'
           + 'https://ru.wikipedia.org/wiki/Преференциальное_голосование\n'
           + 'https://ru.wikipedia.org/wiki/Метод_Шульце',
+        buttons: [BUTTONS.NEW],
+      };
+      return newState;
+    }
+
+    case ACTIONS.ERROR: {
+      const newState = { ...state };
+      const { userId } = action.payload;
+      newState[userId] = {
+        ...state[userId],
+        type: STATES.DEFAULT,
+        reply: ERROR_MESSAGE,
         buttons: [BUTTONS.NEW],
       };
       return newState;
