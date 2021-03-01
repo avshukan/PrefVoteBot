@@ -153,7 +153,8 @@ function botReducer(state, action) {
       const {
         header, text, options, optionsSelected,
       } = state[userId];
-      const errorExplaination = optionsSelected.findIndex((optionSelected) => optionSelected.Name === answer) === -1
+      const isOptionFound = optionsSelected.findIndex((item) => item.Name === answer) === -1;
+      const errorExplaination = isOptionFound
         ? `значения "<b>${answer}</b>" нет в списке вариантов`
         : `значение "<b>${answer}</b>" уже было выбрано вами`;
       const defaultReply = `Простите, ${errorExplaination}<b>\n`
@@ -174,9 +175,8 @@ function botReducer(state, action) {
     case ACTIONS.HEARS_CANCEL: {
       const newState = { ...state };
       const { userId } = action.payload;
-      let reply = 'Действие отменено';
-      const type = state[userId] ? state[userId].type : STATES.DEFAULT;
-      switch (type) {
+      let reply;
+      switch (state[userId] && state[userId].type) {
         case STATES.CREATE_HEADER:
         case STATES.CREATE_TEXT:
         case STATES.CREATE_OPTION:
@@ -185,6 +185,8 @@ function botReducer(state, action) {
         case STATES.ANSWER:
           reply = 'Участие в опросе прервано';
           break;
+        default:
+          reply = 'Действие отменено';
       }
       newState[userId] = {
         ...state[userId],
