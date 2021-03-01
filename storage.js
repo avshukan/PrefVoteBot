@@ -34,12 +34,16 @@ function createDBStorage() {
   }
 
   async function getQuestionStatus(questionId, userId) {
-    const sql = 'SELECT * FROM `prefvotebot_statuses` WHERE `QuestionId` = ? AND `User` = ?';
-    const data = [questionId, userId];
-    const result = await storagePool.execute(sql, data);
-    const [rows] = result;
-    if (rows.length === 0) { return null; }
-    return rows[0].Status;
+    try {
+      const sql = 'SELECT * FROM `prefvotebot_statuses` WHERE `QuestionId` = ? AND `User` = ?';
+      const data = [questionId, userId];
+      const result = await storagePool.execute(sql, data);
+      const [rows] = result;
+      if (rows.length === 0) { return null; }
+      return rows[0].Status;
+    } catch (e) {
+      return e;
+    }
   }
 
   async function getOptions(questionId) {

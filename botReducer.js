@@ -1,5 +1,6 @@
 const { ACTIONS } = require('./action_types');
 const { STATES } = require('./state_types');
+const { BUTTONS } = require('./button_types');
 
 const { DEEPLINK_TOKEN } = process.env;
 const MOCK_MESSAGE = 'Данный функционал находится в разработке';
@@ -15,7 +16,7 @@ function botReducer(state, action) {
         id: userId,
         type: STATES.CREATE_HEADER,
         reply: 'Отправьте заголовок опроса',
-        buttons: ['❌ Cancel'],
+        buttons: [BUTTONS.CANCEL],
       };
       return newState;
     }
@@ -36,7 +37,7 @@ function botReducer(state, action) {
         header,
         clearMessagesQueue: [...(state[userId].clearMessagesQueue || []), userMessageId],
         reply,
-        buttons: ['❌ Cancel'],
+        buttons: [BUTTONS.CANCEL],
       };
       return newState;
     }
@@ -56,7 +57,7 @@ function botReducer(state, action) {
         options: [],
         clearMessagesQueue: [...(state[userId].clearMessagesQueue || []), userMessageId],
         reply,
-        buttons: ['❌ Cancel'],
+        buttons: [BUTTONS.CANCEL],
       };
       return newState;
     }
@@ -69,7 +70,7 @@ function botReducer(state, action) {
         + `Вопрос: ${state[userId].text}\n`
         + 'Варианты ответов:';
       const reply = options.reduce((acc, item) => `${acc}\n - ${item}`, defaultReply);
-      const buttons = (options.length > 1) ? ['✔️ Done', '❌ Cancel'] : ['❌ Cancel'];
+      const buttons = (options.length > 1) ? [BUTTONS.DONE, BUTTONS.CANCEL] : [BUTTONS.CANCEL];
       newState[userId] = {
         ...state[userId],
         userId,
@@ -93,7 +94,7 @@ function botReducer(state, action) {
         options,
       } = action.payload;
       const reply = `<b>${header}</b>\n${text}`;
-      const buttons = [...options.map((option) => option.Name), '❌ Cancel'];
+      const buttons = [...options.map((option) => option.Name), BUTTONS.CANCEL];
       newState[userId] = {
         ...state[userId],
         userId,
@@ -131,7 +132,7 @@ function botReducer(state, action) {
         optionsSelected.forEach((option, index) => {
           reply += `\n${index + 1}. ${option.Name}`;
         });
-        buttons = [...options.map((option) => option.Name), '❌ Cancel'];
+        buttons = [...options.map((option) => option.Name), BUTTONS.CANCEL];
       }
       newState[userId] = {
         ...state[userId],
@@ -159,7 +160,7 @@ function botReducer(state, action) {
         + `${header}</b>\n`
         + `${text}${optionsSelected.length === 0 ? '' : '\nВы уже выбрали:'}`;
       const reply = optionsSelected.reduce((acc, selectedOption, index) => `${acc}\n${index + 1}. ${selectedOption.Name}`, defaultReply);
-      const buttons = [...options.map((option) => option.Name), '❌ Cancel'];
+      const buttons = [...options.map((option) => option.Name), BUTTONS.CANCEL];
       newState[userId] = {
         ...state[userId],
         userId,
@@ -191,7 +192,7 @@ function botReducer(state, action) {
         id: userId,
         type: STATES.DEFAULT,
         reply,
-        buttons: ['/new'],
+        buttons: [BUTTONS.NEW],
       };
       return newState;
     }
@@ -265,7 +266,7 @@ function botReducer(state, action) {
           + 'Для подведения итогов ботом используется метод подсчёта, разработанный Маркусом Шульце.\n\n'
           + 'https://ru.wikipedia.org/wiki/Преференциальное_голосование\n'
           + 'https://ru.wikipedia.org/wiki/Метод_Шульце',
-        buttons: ['/new'],
+        buttons: [BUTTONS.NEW],
       };
       return newState;
     }
@@ -277,7 +278,7 @@ function botReducer(state, action) {
         ...state[userId],
         type: STATES.DEFAULT,
         reply: MOCK_MESSAGE,
-        buttons: ['/new'],
+        buttons: [BUTTONS.NEW],
       };
       return newState;
     }
