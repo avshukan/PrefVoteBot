@@ -21,49 +21,58 @@ function botHandlers(initStore, initStorage) {
   function startHandler() {
     return async function (context) {
       const userId = context.message.from.id;
+      try {
       // const userState = store.getUserState(userId);
-      if (context.startPayload === '') {
-        console.log('context.startPayload === \'\' => return;');
-        console.log('Здесь должно быть какое-то приветственное сообщение');
-        const reply = 'Здесь должно быть какое-то приветственное сообщение';
-        context.replyWithMarkdown(reply);
-        return;
-      }
-      const questionId = parseInt(context.startPayload, 10);
-      const status = await storage.getQuestionStatus(questionId, userId);
-      if (status === 'ANSWERED') {
-        store.dispatch({
-          type: ACTIONS.HEARS_RESULTS,
-          payload: { userId, questionId },
-        });
-        hearsResultsHandler()(context);
-        return;
-      }
-      // NOT ANSWERED
-      const questionWithOptions = await storage.getQuestionWithOptions(questionId);
-      const { header, text, options } = questionWithOptions;
-      store.dispatch({
-        type: ACTIONS.CAST_VOTE,
-        payload: {
-          userId,
-          questionId,
-          header,
-          text,
-          options,
-        },
-      });
-      const { reply, buttons } = store.getUserState(userId);
-      context
-        .reply(reply, getExtraReply(buttons))
-        .then((message) => {
+        if (context.startPayload === '') {
+          console.log('context.startPayload === \'\' => return;');
+          console.log('Здесь должно быть какое-то приветственное сообщение');
+          const reply = 'Здесь должно быть какое-то приветственное сообщение';
+          context.replyWithMarkdown(reply);
+          return;
+        }
+        const questionId = parseInt(context.startPayload, 10);
+        const status = await storage.getQuestionStatus(questionId, userId);
+        if (status === 'ANSWERED') {
           store.dispatch({
-            type: ACTIONS.APPEND_MESSAGE_TO_QUEUE,
-            payload: { userId, messageId: message.message_id },
+            type: ACTIONS.HEARS_RESULTS,
+            payload: { userId, questionId },
           });
-        })
-        .catch((error) => {
-          console.log(error);
+          hearsResultsHandler()(context);
+          return;
+        }
+        // NOT ANSWERED
+        const questionWithOptions = await storage.getQuestionWithOptions(questionId);
+        const { header, text, options } = questionWithOptions;
+        store.dispatch({
+          type: ACTIONS.CAST_VOTE,
+          payload: {
+            userId,
+            questionId,
+            header,
+            text,
+            options,
+          },
         });
+        const { reply, buttons } = store.getUserState(userId);
+        context
+          .reply(reply, getExtraReply(buttons))
+          .then((message) => {
+            store.dispatch({
+              type: ACTIONS.APPEND_MESSAGE_TO_QUEUE,
+              payload: { userId, messageId: message.message_id },
+            });
+          })
+          .catch((error) => {
+            console.log(error);
+          });
+      } catch {
+        store.dispatch({
+          type: ACTIONS.MOCK,
+          payload: { userId },
+        });
+        const { reply, buttons } = store.getUserState(userId);
+        context.reply('Извините, произошла ошибка. Что-то пошло не так...', getExtraReply(buttons));
+      }
     };
   }
 

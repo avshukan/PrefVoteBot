@@ -6,38 +6,10 @@
 require('dotenv').config();
 const { Telegraf } = require('telegraf');
 
-const {
-  TELEGRAM_TOKEN,
-  // MYSQL_HOSTNAME,
-  // MYSQL_DATABASE,
-  // MYSQL_USERNAME,
-  // MYSQL_PASSWORD,
-  // MYSQL_POOLSIZE,
-} = process.env;
+const { TELEGRAM_TOKEN } = process.env;
 const createDBStorage = require('./storage');
 
 const storage = createDBStorage();
-
-// const mysql = require('mysql2');
-
-// const pool = mysql.createPool({
-//   connectionLimit: MYSQL_POOLSIZE,
-//   host: MYSQL_HOSTNAME,
-//   user: MYSQL_USERNAME,
-//   password: MYSQL_PASSWORD,
-//   database: MYSQL_DATABASE,
-// });
-
-// const promisePool = pool.promise();
-
-if (TELEGRAM_TOKEN === undefined) {
-  throw new Error('TELEGRAM_TOKEN must be provided!');
-}
-
-const bot = new Telegraf(TELEGRAM_TOKEN);
-
-bot.use(Telegraf.log());
-
 const initialState = {};
 const botReducer = require('./botReducer');
 const createStore = require('./createStore');
@@ -46,7 +18,13 @@ const store = createStore(botReducer, initialState);
 const botHandlers = require('./botHandlers');
 
 const handlers = botHandlers(store, storage);
+const { BUTTONS } = require('./button_types');
 
+if (TELEGRAM_TOKEN === undefined) {
+  throw new Error('TELEGRAM_TOKEN must be provided!');
+}
+const bot = new Telegraf(TELEGRAM_TOKEN);
+bot.use(Telegraf.log());
 // start - приветственное сообщение
 // new - создать опрос
 // createdbyme - опросы, созданные мной
@@ -57,7 +35,6 @@ const handlers = botHandlers(store, storage);
 // settings - настройки
 // random - случайный опрос
 // popular - самые популярные опросы
-
 bot.start(handlers.startHandler());
 bot.command('createdbyme', handlers.commandCreatedByMeHandler);
 bot.command('about', handlers.commandAboutHandler);
@@ -68,9 +45,9 @@ bot.command('popular', handlers.commandPopularHandler);
 bot.command('random', handlers.commandRandomHandler);
 bot.command('settings', handlers.commandSettingsHandler);
 bot.command('votedbyme', handlers.commandVotedByMeHandler);
-bot.hears('❌ Cancel', handlers.hearsCancelHandler());
-bot.hears('✔️ Done', handlers.hearsDoneHandler());
-bot.hears('👁 Results', handlers.hearsResultsHandler());
+bot.hears(BUTTONS.CANCEL, handlers.hearsCancelHandler());
+bot.hears(BUTTONS.DONE, handlers.hearsDoneHandler());
+bot.hears(BUTTONS.RESULTS, handlers.hearsResultsHandler());
 bot.on('text', handlers.onTextHandler());
 // bot.on('text', store.dispatch({ type: 'NEW MESSAGE' }));
 
