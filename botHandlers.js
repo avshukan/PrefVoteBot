@@ -69,11 +69,11 @@ function botHandlers(initStore, initStorage) {
         context.reply(reply, getExtraReply(buttons));
       } catch {
         store.dispatch({
-          type: ACTIONS.MOCK,
+          type: ACTIONS.ERROR,
           payload: { userId },
         });
-        const { buttons } = store.getUserState(userId);
-        context.reply('Извините, произошла ошибка. Что-то пошло не так...', getExtraReply(buttons));
+        const { reply, buttons } = store.getUserState(userId);
+        context.reply(reply, getExtraReply(buttons));
       }
     };
   }
@@ -111,11 +111,11 @@ function botHandlers(initStore, initStorage) {
         console.log(userId, context);
       } catch {
         store.dispatch({
-          type: ACTIONS.MOCK,
+          type: ACTIONS.ERROR,
           payload: { userId },
         });
-        const { buttons } = store.getUserState(userId);
-        context.reply('Извините, произошла ошибка. Что-то пошло не так...', getExtraReply(buttons));
+        const { reply, buttons } = store.getUserState(userId);
+        context.reply(reply, getExtraReply(buttons));
       }
     };
   }
@@ -401,11 +401,11 @@ function botHandlers(initStore, initStorage) {
           });
       } catch {
         store.dispatch({
-          type: ACTIONS.MOCK,
+          type: ACTIONS.ERROR,
           payload: { userId },
         });
-        const { buttons } = store.getUserState(userId);
-        context.reply('Извините, произошла ошибка. Что-то пошло не так...', getExtraReply(buttons));
+        const { reply, buttons } = store.getUserState(userId);
+        context.reply(reply, getExtraReply(buttons));
       }
     };
   }
