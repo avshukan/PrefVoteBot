@@ -99,7 +99,7 @@ function createDBStorage() {
 
   async function saveRanks({ userId, options }) {
     const sql = 'INSERT INTO `prefvotebot_ranks` (`QuestionId`, `OptionId`, `Rank`, `User`) VALUES ?';
-    const data = [options.map((option, index) => [option.QuestionId, option.Id, index + 1, userId])];
+    const data = [options.map((item, index) => [item.QuestionId, item.Id, index + 1, userId])];
     const result = await storagePool.query(sql, data);
     return result;
   }
