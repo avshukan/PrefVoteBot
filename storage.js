@@ -24,13 +24,17 @@ function createDBStorage() {
   const storagePool = promisePool;
 
   async function getQuestion(questionId) {
-    const sql = 'SELECT * FROM `prefvotebot_questions` WHERE `Id` = ?';
-    const data = [questionId];
-    const [question] = await storagePool.execute(sql, data);
-    return {
-      header: question[0].Header,
-      text: question[0].Text,
-    };
+    try {
+      const sql = 'SELECT * FROM `prefvotebot_questions` WHERE `Id` = ?';
+      const data = [questionId];
+      const [question] = await storagePool.execute(sql, data);
+      return {
+        header: question[0].Header,
+        text: question[0].Text,
+      };
+    } catch (e) {
+      return e;
+    }
   }
 
   async function getQuestionStatus(questionId, userId) {
@@ -47,34 +51,47 @@ function createDBStorage() {
   }
 
   async function getOptions(questionId) {
-    const sql = 'SELECT * FROM `prefvotebot_options` WHERE `QuestionId` = ?';
-    const data = [questionId];
-    const [options] = await storagePool.execute(sql, data);
-    return options;
+    try {
+      const sql = 'SELECT * FROM `prefvotebot_options` WHERE `QuestionId` = ?';
+      const data = [questionId];
+      const [options] = await storagePool.execute(sql, data);
+      return options;
+    } catch (e) {
+      return e;
+    }
   }
 
   async function getQuestionWithOptions(questionId) {
-    const questionSQL = 'SELECT * FROM `prefvotebot_questions` WHERE `Id` = ?';
-    const optioinsSQL = 'SELECT * FROM `prefvotebot_options` WHERE `QuestionId` = ?';
-    const data = [questionId];
-    const [questionRow] = await storagePool.execute(questionSQL, data);
-    const [optionsRows] = await storagePool.execute(optioinsSQL, data);
-    return {
-      header: questionRow[0].Header,
-      text: questionRow[0].Text,
-      options: optionsRows,
-    };
+    try {
+      const questionSQL = 'SELECT * FROM `prefvotebot_questions` WHERE `Id` = ?';
+      const optioinsSQL = 'SELECT * FROM `prefvotebot_options` WHERE `QuestionId` = ?';
+      const data = [questionId];
+      const [questionRow] = await storagePool.execute(questionSQL, data);
+      const [optionsRows] = await storagePool.execute(optioinsSQL, data);
+      return {
+        header: questionRow[0].Header,
+        text: questionRow[0].Text,
+        options: optionsRows,
+      };
+    } catch (e) {
+      return e;
+    }
   }
 
   async function getVotersCount(questionId) {
-    const sql = 'SELECT COUNT(DISTINCT User) AS VotersCount FROM `prefvotebot_ranks` WHERE `QuestionId` = ?';
-    const data = [questionId];
-    const [result] = await storagePool.execute(sql, data);
-    return { votersCount: result[0].VotersCount };
+    try {
+      const sql = 'SELECT COUNT(DISTINCT User) AS VotersCount FROM `prefvotebot_ranks` WHERE `QuestionId` = ?';
+      const data = [questionId];
+      const [result] = await storagePool.execute(sql, data);
+      return { votersCount: result[0].VotersCount };
+    } catch (e) {
+      return e;
+    }
   }
 
   async function getRanks(questionId) {
-    const sql = `SELECT
+    try {
+      const sql = `SELECT
         r1.OptionId Option1,
         r2.OptionId Option2,
         SUM(CASE WHEN r1.Rank < r2.Rank THEN 1 ELSE 0 END) K
@@ -92,36 +109,51 @@ function createDBStorage() {
       GROUP BY
         r1.OptionId,
         r2.OptionId`;
-    const data = [questionId, questionId];
-    const [ranks] = await storagePool.query(sql, data);
-    return ranks;
+      const data = [questionId, questionId];
+      const [ranks] = await storagePool.query(sql, data);
+      return ranks;
+    } catch (e) {
+      return e;
+    }
   }
 
   async function saveRanks({ userId, options }) {
-    const sql = 'INSERT INTO `prefvotebot_ranks` (`QuestionId`, `OptionId`, `Rank`, `User`) VALUES ?';
-    const data = [options.map((item, index) => [item.QuestionId, item.Id, index + 1, userId])];
-    const result = await storagePool.query(sql, data);
-    return result;
+    try {
+      const sql = 'INSERT INTO `prefvotebot_ranks` (`QuestionId`, `OptionId`, `Rank`, `User`) VALUES ?';
+      const data = [options.map((item, index) => [item.QuestionId, item.Id, index + 1, userId])];
+      const result = await storagePool.query(sql, data);
+      return result;
+    } catch (e) {
+      return e;
+    }
   }
 
   async function saveStatus({ userId, questionId, status }) {
-    const sql = 'INSERT INTO `prefvotebot_statuses` (`QuestionId`, `User`, `Status`) VALUES (?, ?, ?)';
-    const data = [questionId, userId, status];
-    const result = await storagePool.query(sql, data);
-    return result;
+    try {
+      const sql = 'INSERT INTO `prefvotebot_statuses` (`QuestionId`, `User`, `Status`) VALUES (?, ?, ?)';
+      const data = [questionId, userId, status];
+      const result = await storagePool.query(sql, data);
+      return result;
+    } catch (e) {
+      return e;
+    }
   }
 
   async function saveQuestionWithOptions({
     userId, header, text, options,
   }) {
-    const questionSQL = 'INSERT INTO `prefvotebot_questions` (`Header`, `Text`, `Owner`) VALUES (?, ?, ?)';
-    const questionData = [header, text, userId];
-    const questionResult = await storagePool.query(questionSQL, questionData);
-    const questionId = questionResult[0].insertId;
-    const optionsSQL = 'INSERT INTO `prefvotebot_options` (`QuestionId`, `Name`) VALUES ?';
-    const optionsData = [options.map((element) => [questionId, element])];
-    await storagePool.query(optionsSQL, optionsData);
-    return questionId;
+    try {
+      const questionSQL = 'INSERT INTO `prefvotebot_questions` (`Header`, `Text`, `Owner`) VALUES (?, ?, ?)';
+      const questionData = [header, text, userId];
+      const questionResult = await storagePool.query(questionSQL, questionData);
+      const questionId = questionResult[0].insertId;
+      const optionsSQL = 'INSERT INTO `prefvotebot_options` (`QuestionId`, `Name`) VALUES ?';
+      const optionsData = [options.map((element) => [questionId, element])];
+      await storagePool.query(optionsSQL, optionsData);
+      return questionId;
+    } catch (e) {
+      return e;
+    }
   }
 
   return {
