@@ -19,32 +19,23 @@ const botHandlers = require('./botHandlers');
 
 const handlers = botHandlers(store, storage);
 const { BUTTONS } = require('./button_types');
+const { COMMANDS } = require('./command_types');
 
 if (TELEGRAM_TOKEN === undefined) {
   throw new Error('TELEGRAM_TOKEN must be provided!');
 }
 const bot = new Telegraf(TELEGRAM_TOKEN);
 bot.use(Telegraf.log());
-// start - приветственное сообщение
-// new - создать опрос
-// createdbyme - опросы, созданные мной
-// votedbyme - опросы, в которых я принял участие
-// find - поиск опроса
-// about - информация о боте
-// help - в случае проблем
-// settings - настройки
-// random - случайный опрос
-// popular - самые популярные опросы
 bot.start(handlers.startHandler());
-bot.command('createdbyme', handlers.commandCreatedByMeHandler);
-bot.command('about', handlers.commandAboutHandler);
-bot.command('find', handlers.commandFindHandler);
-bot.command('help', handlers.commandHelpHandler);
-bot.command('new', handlers.commandNewHandler());
-bot.command('popular', handlers.commandPopularHandler);
-bot.command('random', handlers.commandRandomHandler);
-bot.command('settings', handlers.commandSettingsHandler);
-bot.command('votedbyme', handlers.commandVotedByMeHandler);
+bot.command(COMMANDS.ABOUT, handlers.commandAboutHandler);
+bot.command(COMMANDS.CREATEDBYME, handlers.commandCreatedByMeHandler);
+bot.command(COMMANDS.FIND, handlers.commandFindHandler);
+bot.command(COMMANDS.HELP, handlers.commandHelpHandler);
+bot.command(COMMANDS.NEW, handlers.commandNewHandler());
+bot.command(COMMANDS.POPULAR, handlers.commandPopularHandler);
+bot.command(COMMANDS.RANDOM, handlers.commandRandomHandler);
+bot.command(COMMANDS.SETTINGS, handlers.commandSettingsHandler);
+bot.command(COMMANDS.VOTEDBYME, handlers.commandVotedByMeHandler);
 bot.hears(BUTTONS.CANCEL, handlers.hearsCancelHandler());
 bot.hears(BUTTONS.DONE, handlers.hearsDoneHandler());
 bot.hears(BUTTONS.RESULTS, handlers.hearsResultsHandler());
