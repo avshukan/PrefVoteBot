@@ -37,6 +37,20 @@ function createDBStorage() {
     }
   }
 
+  async function getQuestionCreatedByUser(questionId) {
+    try {
+      const sql = 'SELECT * FROM `prefvotebot_questions` WHERE `Id` = ?';
+      const data = [questionId];
+      const [question] = await storagePool.execute(sql, data);
+      return {
+        header: question[0].Header,
+        text: question[0].Text,
+      };
+    } catch (e) {
+      return e;
+    }
+  }
+
   async function getQuestionStatus(questionId, userId) {
     try {
       const sql = 'SELECT * FROM `prefvotebot_statuses` WHERE `QuestionId` = ? AND `User` = ?';
