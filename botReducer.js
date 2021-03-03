@@ -1,6 +1,7 @@
 const { ACTIONS } = require('./action_types');
 const { STATES } = require('./state_types');
 const { BUTTONS } = require('./button_types');
+const { COMMANDS } = require('./command_types');
 
 const { DEEPLINK_TOKEN } = process.env;
 const MOCK_MESSAGE = 'Данный функционал находится в разработке';
@@ -272,6 +273,33 @@ function botReducer(state, action) {
         buttons: [BUTTONS.NEW],
       };
       return newState;
+    }
+
+    case ACTIONS.GET_QUESTIONS_LIST: {
+      const { userId, questions = [], command } = action.payload;
+      let replyHeader;
+      switch (command) {
+        case COMMANDS.CREATEDBYME:
+          replyHeader = 'Последние 10 опросов, созданных Вами:';
+          break;
+        default:
+          replyHeader = 'Список найденных опросов:';
+      }
+      const reply = questions.reduce((acc, item, index) => ((index < 10)
+        ? `${acc}\n\n`
+        + `${index + 1}. <b>${item.header}</b>\n`
+        + `${item.text}\n`
+        + `${DEEPLINK_TOKEN}start=${item.id}`
+        : acc), replyHeader);
+      return {
+        ...state,
+        [userId]: {
+          ...state[userId],
+          type: STATES.DEFAULT,
+          reply,
+          buttons: [],
+        },
+      };
     }
 
     case ACTIONS.ERROR: {

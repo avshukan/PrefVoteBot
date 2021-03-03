@@ -37,15 +37,12 @@ function createDBStorage() {
     }
   }
 
-  async function getQuestionCreatedByUser(questionId) {
+  async function getQuestionsCreatedByUser(userId) {
     try {
-      const sql = 'SELECT * FROM `prefvotebot_questions` WHERE `Id` = ?';
-      const data = [questionId];
-      const [question] = await storagePool.execute(sql, data);
-      return {
-        header: question[0].Header,
-        text: question[0].Text,
-      };
+      const sql = 'SELECT `Id`, `Header`, `Text` FROM `prefvotebot_questions` WHERE Owner = ? ORDER BY `CreatedDate` DESC';
+      const data = [userId];
+      const [questions] = await storagePool.execute(sql, data);
+      return questions.map(({ Id, Header, Text }) => ({ id: Id, header: Header, text: Text }));
     } catch (e) {
       return e;
     }
@@ -172,6 +169,7 @@ function createDBStorage() {
 
   return {
     getQuestion,
+    getQuestionsCreatedByUser,
     getQuestionStatus,
     getQuestionWithOptions,
     getOptions,
