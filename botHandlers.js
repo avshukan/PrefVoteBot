@@ -1,5 +1,6 @@
 const { ACTIONS } = require('./action_types');
 const { STATES } = require('./state_types');
+const { COMMANDS } = require('./command_types');
 const { method } = require('./method');
 const getExtraReply = require('./getExtraReply');
 
@@ -282,14 +283,24 @@ function botHandlers(initStore, initStorage) {
     context.reply(reply, getExtraReply(buttons));
   }
 
-  function commandCreatedByMeHandler(context) {
+  async function commandCreatedByMeHandler(context) {
     const userId = context.message.from.id;
-    store.dispatch({
-      type: ACTIONS.MOCK,
-      payload: { userId },
-    });
-    const { reply, buttons } = store.getUserState(userId);
-    context.reply(reply, getExtraReply(buttons));
+    try {
+      const questions = await storage.getQuestionsCreatedByUser(userId);
+      store.dispatch({
+        type: ACTIONS.GET_QUESTIONS_LIST,
+        payload: { userId, questions, command: COMMANDS.CREATEDBYME },
+      });
+      const { reply, buttons } = store.getUserState(userId);
+      context.reply(reply, getExtraReply(buttons));
+    } catch {
+      store.dispatch({
+        type: ACTIONS.ERROR,
+        payload: { userId },
+      });
+      const { reply, buttons } = store.getUserState(userId);
+      context.reply(reply, getExtraReply(buttons));
+    }
   }
 
   function commandVotedByMeHandler(context) {
