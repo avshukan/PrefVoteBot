@@ -303,14 +303,24 @@ function botHandlers(initStore, initStorage) {
     }
   }
 
-  function commandVotedByMeHandler(context) {
+  async function commandVotedByMeHandler(context) {
     const userId = context.message.from.id;
-    store.dispatch({
-      type: ACTIONS.MOCK,
-      payload: { userId },
-    });
-    const { reply, buttons } = store.getUserState(userId);
-    context.reply(reply, getExtraReply(buttons));
+    try {
+      const questions = await storage.getQuestionsVotedByUser(userId);
+      store.dispatch({
+        type: ACTIONS.GET_QUESTIONS_LIST,
+        payload: { userId, questions, command: COMMANDS.VOTEDBYME },
+      });
+      const { reply, buttons } = store.getUserState(userId);
+      context.reply(reply, getExtraReply(buttons));
+    } catch {
+      store.dispatch({
+        type: ACTIONS.ERROR,
+        payload: { userId },
+      });
+      const { reply, buttons } = store.getUserState(userId);
+      context.reply(reply, getExtraReply(buttons));
+    }
   }
 
   function commandFindHandler(context) {

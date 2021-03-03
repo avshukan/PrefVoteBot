@@ -48,6 +48,22 @@ function createDBStorage() {
     }
   }
 
+  async function getQuestionsVotedByUser(userId) {
+    try {
+      const sql = 'SELECT pq.`Id`, `Header`, `Text`'
+        + ' FROM `prefvotebot_questions`pq'
+        + ' INNER JOIN `prefvotebot_statuses` ps'
+        + ' ON (pq.Id = ps.QuestionId)'
+        + ' WHERE ps.`User` = ?'
+        + ' ORDER BY ps.StatusDate DESC';
+      const data = [userId];
+      const [questions] = await storagePool.execute(sql, data);
+      return questions.map(({ Id, Header, Text }) => ({ id: Id, header: Header, text: Text }));
+    } catch (e) {
+      return e;
+    }
+  }
+
   async function getQuestionStatus(questionId, userId) {
     try {
       const sql = 'SELECT * FROM `prefvotebot_statuses` WHERE `QuestionId` = ? AND `User` = ?';
@@ -170,6 +186,7 @@ function createDBStorage() {
   return {
     getQuestion,
     getQuestionsCreatedByUser,
+    getQuestionsVotedByUser,
     getQuestionStatus,
     getQuestionWithOptions,
     getOptions,
