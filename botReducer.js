@@ -282,6 +282,9 @@ function botReducer(state, action) {
         case COMMANDS.CREATEDBYME:
           replyHeader = 'Последние 10 опросов, созданных Вами:';
           break;
+        case COMMANDS.VOTEDBYME:
+          replyHeader = 'Последние 10 опросов с Вашим участием:';
+          break;
         default:
           replyHeader = 'Список найденных опросов:';
       }
