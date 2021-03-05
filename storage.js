@@ -39,10 +39,25 @@ function createDBStorage() {
 
   async function getQuestionsCreatedByUser(userId) {
     try {
-      const sql = 'SELECT `Id`, `Header`, `Text` FROM `prefvotebot_questions` WHERE Owner = ? ORDER BY `CreatedDate` DESC';
+      const sql = `
+        SELECT Id, Header, Text, Voters
+        FROM prefvotebot_questions pq
+        INNER JOIN (
+          SELECT QuestionId, COUNT(DISTINCT User) AS Voters
+          FROM prefvotebot_statuses
+          WHERE Status = "ANSWERED"
+          GROUP BY QuestionId
+        ) pv
+        ON (pq.Id = pv.QuestionId)
+        WHERE Owner = ?
+        ORDER BY CreatedDate DESC`;
       const data = [userId];
       const [questions] = await storagePool.execute(sql, data);
-      return questions.map(({ Id, Header, Text }) => ({ id: Id, header: Header, text: Text }));
+      return questions.map(({
+        Id, Header, Text, Voters,
+      }) => ({
+        id: Id, header: Header, text: Text, voters: Voters,
+      }));
     } catch (e) {
       return e;
     }
@@ -50,15 +65,27 @@ function createDBStorage() {
 
   async function getQuestionsVotedByUser(userId) {
     try {
-      const sql = 'SELECT pq.`Id`, `Header`, `Text`'
-        + ' FROM `prefvotebot_questions`pq'
-        + ' INNER JOIN `prefvotebot_statuses` ps'
-        + ' ON (pq.Id = ps.QuestionId)'
-        + ' WHERE ps.`User` = ?'
-        + ' ORDER BY ps.StatusDate DESC';
+      const sql = `
+        SELECT pq.Id, Header, Text, Voters
+        FROM prefvotebot_questions pq
+        INNER JOIN prefvotebot_statuses ps
+        ON (pq.Id = ps.QuestionId)
+        INNER JOIN (
+          SELECT QuestionId, COUNT(DISTINCT User) AS Voters
+          FROM prefvotebot_statuses
+          WHERE Status = "ANSWERED"
+          GROUP BY QuestionId
+        ) pv
+        ON (pq.Id = pv.QuestionId)
+        WHERE ps.User = ?
+        ORDER BY ps.StatusDate DESC`;
       const data = [userId];
       const [questions] = await storagePool.execute(sql, data);
-      return questions.map(({ Id, Header, Text }) => ({ id: Id, header: Header, text: Text }));
+      return questions.map(({
+        Id, Header, Text, Voters,
+      }) => ({
+        id: Id, header: Header, text: Text, voters: Voters,
+      }));
     } catch (e) {
       return e;
     }
@@ -72,6 +99,33 @@ function createDBStorage() {
       const [rows] = result;
       if (rows.length === 0) { return null; }
       return rows[0].Status;
+    } catch (e) {
+      return e;
+    }
+  }
+
+  async function getQuestionsPopular() {
+    try {
+      const sql = `
+        SELECT pq.Id, Header, Text, Voters
+        FROM prefvotebot_questions pq
+        INNER JOIN (
+          SELECT QuestionId, COUNT(DISTINCT User) AS Voters
+          FROM prefvotebot_statuses
+          WHERE Status = "ANSWERED"
+          GROUP BY QuestionId
+        ) pv
+        ON (pq.Id = pv.QuestionId)
+        ORDER BY
+          Voters DESC,
+          CreatedDate DESC
+        LIMIT 10`;
+      const [questions] = await storagePool.execute(sql);
+      return questions.map(({
+        Id, Header, Text, Voters,
+      }) => ({
+        id: Id, header: Header, text: Text, voters: Voters,
+      }));
     } catch (e) {
       return e;
     }
@@ -189,6 +243,7 @@ function createDBStorage() {
     getQuestionsVotedByUser,
     getQuestionStatus,
     getQuestionWithOptions,
+    getQuestionsPopular,
     getOptions,
     getVotersCount,
     getRanks,

@@ -282,6 +282,9 @@ function botReducer(state, action) {
         case COMMANDS.CREATEDBYME:
           replyHeader = 'Последние 10 опросов, созданных Вами:';
           break;
+        case COMMANDS.POPULAR:
+          replyHeader = '10 самых популярных опросов:';
+          break;
         case COMMANDS.VOTEDBYME:
           replyHeader = 'Последние 10 опросов с Вашим участием:';
           break;
@@ -289,10 +292,11 @@ function botReducer(state, action) {
           replyHeader = 'Список найденных опросов:';
       }
       const reply = questions.reduce((acc, item, index) => ((index < 10)
-        ? `${acc}\n\n`
+        ? `${`${acc}\n\n`
         + `${index + 1}. <b>${item.header}</b>\n`
-        + `${item.text}\n`
-        + `${DEEPLINK_TOKEN}start=${item.id}`
+        + `${item.text}\n`}${
+          item.voters ? `Количество участников: ${item.voters}\n` : ''
+        }${DEEPLINK_TOKEN}start=${item.id}`
         : acc), replyHeader);
       return {
         ...state,
