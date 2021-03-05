@@ -343,6 +343,26 @@ function botHandlers(initStore, initStorage) {
     context.reply(reply, getExtraReply(buttons));
   }
 
+  async function commandPopularHandler(context) {
+    const userId = context.message.from.id;
+    try {
+      const questions = await storage.getQuestionsPopular();
+      store.dispatch({
+        type: ACTIONS.GET_QUESTIONS_LIST,
+        payload: { userId, questions, command: COMMANDS.POPULAR },
+      });
+      const { reply, buttons } = store.getUserState(userId);
+      context.reply(reply, getExtraReply(buttons));
+    } catch {
+      store.dispatch({
+        type: ACTIONS.ERROR,
+        payload: { userId },
+      });
+      const { reply, buttons } = store.getUserState(userId);
+      context.reply(reply, getExtraReply(buttons));
+    }
+  }
+
   function commandSettingsHandler(context) {
     const userId = context.message.from.id;
     store.dispatch({
@@ -354,16 +374,6 @@ function botHandlers(initStore, initStorage) {
   }
 
   function commandRandomHandler(context) {
-    const userId = context.message.from.id;
-    store.dispatch({
-      type: ACTIONS.MOCK,
-      payload: { userId },
-    });
-    const { reply, buttons } = store.getUserState(userId);
-    context.reply(reply, getExtraReply(buttons));
-  }
-
-  function commandPopularHandler(context) {
     const userId = context.message.from.id;
     store.dispatch({
       type: ACTIONS.MOCK,
