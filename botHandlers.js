@@ -339,14 +339,27 @@ function botHandlers(initStore, initStorage) {
     }
   }
 
-  function commandFindHandler(context) {
-    const userId = context.message.from.id;
-    store.dispatch({
-      type: ACTIONS.MOCK,
-      payload: { userId },
-    });
-    const { reply, buttons } = store.getUserState(userId);
-    context.reply(reply, getExtraReply(buttons));
+  async function commandFindHandler(context) {
+    const { from: { id: userId }, text } = context.message;
+    try {
+      const textArray = text.match(/[A-Za-zА-Яа-яЁё0-9]+/gi);
+      const command = textArray.shift();
+      if (command !== 'find' || textArray.length === 0) throw new Error('Уточните строку поиска!');
+      const questions = await storage.getQuestionsWithText(textArray);
+      store.dispatch({
+        type: ACTIONS.GET_QUESTIONS_LIST,
+        payload: { userId, questions, command: COMMANDS.FIND },
+      });
+      const { reply, buttons } = store.getUserState(userId);
+      context.reply(reply, getExtraReply(buttons));
+    } catch (error) {
+      store.dispatch({
+        type: ACTIONS.ERROR,
+        payload: { userId, error },
+      });
+      const { reply, buttons } = store.getUserState(userId);
+      context.reply(reply, getExtraReply(buttons));
+    }
   }
 
   function commandHelpHandler(context) {
