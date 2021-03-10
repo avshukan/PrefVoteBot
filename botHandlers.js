@@ -389,14 +389,47 @@ function botHandlers(initStore, initStorage) {
     context.reply(reply, getExtraReply(buttons));
   }
 
-  function commandRandomHandler(context) {
+  async function launchQuestion(context, questionId) {
     const userId = context.message.from.id;
+    const status = await storage.getQuestionStatus(questionId, userId);
+    if (status === 'ANSWERED') {
+      store.dispatch({
+        type: ACTIONS.HEARS_RESULTS,
+        payload: { userId, questionId },
+      });
+      hearsResultsHandler()(context);
+      return;
+    }
+    // NOT ANSWERED
+    const questionWithOptions = await storage.getQuestionWithOptions(questionId);
+    const { header, text, options } = questionWithOptions;
     store.dispatch({
-      type: ACTIONS.MOCK,
-      payload: { userId },
+      type: ACTIONS.CAST_VOTE,
+      payload: {
+        userId,
+        questionId,
+        header,
+        text,
+        options,
+      },
     });
     const { reply, buttons } = store.getUserState(userId);
-    context.reply(reply, getExtraReply(buttons));
+    context
+      .reply(reply, getExtraReply(buttons))
+      .then((message) => {
+        store.dispatch({
+          type: ACTIONS.APPEND_MESSAGE_TO_QUEUE,
+          payload: { userId, messageId: message.message_id },
+        });
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  }
+
+  async function commandRandomHandler(context) {
+    const questionId = await storage.getQuestionsRandom();
+    await launchQuestion(context, questionId);
   }
 
   function startHandler() {
@@ -412,40 +445,7 @@ function botHandlers(initStore, initStorage) {
           return;
         }
         const questionId = parseInt(context.startPayload, 10);
-        const status = await storage.getQuestionStatus(questionId, userId);
-        if (status === 'ANSWERED') {
-          store.dispatch({
-            type: ACTIONS.HEARS_RESULTS,
-            payload: { userId, questionId },
-          });
-          hearsResultsHandler()(context);
-          return;
-        }
-        // NOT ANSWERED
-        const questionWithOptions = await storage.getQuestionWithOptions(questionId);
-        const { header, text, options } = questionWithOptions;
-        store.dispatch({
-          type: ACTIONS.CAST_VOTE,
-          payload: {
-            userId,
-            questionId,
-            header,
-            text,
-            options,
-          },
-        });
-        const { reply, buttons } = store.getUserState(userId);
-        context
-          .reply(reply, getExtraReply(buttons))
-          .then((message) => {
-            store.dispatch({
-              type: ACTIONS.APPEND_MESSAGE_TO_QUEUE,
-              payload: { userId, messageId: message.message_id },
-            });
-          })
-          .catch((error) => {
-            console.log(error);
-          });
+        await launchQuestion(context, questionId);
       } catch {
         store.dispatch({
           type: ACTIONS.ERROR,
