@@ -131,6 +131,27 @@ function createDBStorage() {
     }
   }
 
+  async function getQuestionsRandom() {
+    try {
+      const sqlCount = `
+        SELECT COUNT(*) K
+        FROM prefvotebot_questions pq`;
+      const [resultCount] = await storagePool.execute(sqlCount);
+      const count = resultCount[0].K;
+      const randomId = Math.floor(count * Math.random());
+      const sql = `SELECT Id
+        FROM prefvotebot_questions pq
+        ORDER BY Id ASC
+        LIMIT ?, 1`;
+      const data = [randomId];
+      const [questions] = await storagePool.execute(sql, data);
+      const questionId = questions[0].Id;
+      return questionId;
+    } catch (e) {
+      return e;
+    }
+  }
+
   async function getOptions(questionId) {
     try {
       const sql = 'SELECT * FROM `prefvotebot_options` WHERE `QuestionId` = ?';
@@ -256,6 +277,7 @@ function createDBStorage() {
     getQuestionStatus,
     getQuestionWithOptions,
     getQuestionsPopular,
+    getQuestionsRandom,
     getOptions,
     getVotersCount,
     getRanks,
