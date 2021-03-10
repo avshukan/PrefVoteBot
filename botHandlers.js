@@ -54,11 +54,16 @@ function botHandlers(initStore, initStorage) {
 
   function hearsDoneHandler() {
     return async function (context) {
-      const userId = context.message.from.id;
+      const {
+        id: userId,
+        first_name: userFirstName,
+        last_name: userLastName,
+        username: userName,
+      } = context.message.from;
       const { header, text, options } = store.getUserState(userId);
       try {
         const questionId = await storage.saveQuestionWithOptions({
-          userId, header, text, options,
+          userId, header, text, options, userFirstName, userLastName, userName,
         });
         store.dispatch({
           type: ACTIONS.HEARS_DONE,
@@ -123,7 +128,12 @@ function botHandlers(initStore, initStorage) {
 
   function onTextHandler() {
     return async function (context) {
-      const userId = context.message.from.id;
+      const {
+        id: userId,
+        first_name: userFirstName,
+        last_name: userLastName,
+        username: userName,
+      } = context.message.from;
       const userMessageId = context.message.message_id;
       const info = context.message.text;
       const { questionId, type } = store.getUserState(userId);
@@ -234,11 +244,17 @@ function botHandlers(initStore, initStorage) {
             await storage.saveRanks({
               userId,
               options: optionsSelected,
+              userFirstName,
+              userLastName,
+              userName,
             });
             await storage.saveStatus({
               userId,
               questionId,
               status: 'ANSWERED',
+              userFirstName,
+              userLastName,
+              userName,
             });
           }
           store.dispatch({

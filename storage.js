@@ -198,10 +198,16 @@ function createDBStorage() {
     }
   }
 
-  async function saveRanks({ userId, options }) {
+  async function saveRanks({
+    userId, options, userFirstName, userLastName, userName,
+  }) {
     try {
-      const sql = 'INSERT INTO `prefvotebot_ranks` (`QuestionId`, `OptionId`, `Rank`, `User`) VALUES ?';
-      const data = [options.map((item, index) => [item.QuestionId, item.Id, index + 1, userId])];
+      const sql = `INSERT INTO prefvotebot_ranks
+        (QuestionId, OptionId, Rank, User, UserFirstName, UserLastName, UserName)
+        VALUES ?`;
+      const data = [options.map((item, index) => [
+        item.QuestionId, item.Id, index + 1, userId, userFirstName, userLastName, userName,
+      ])];
       const result = await storagePool.query(sql, data);
       return result;
     } catch (e) {
@@ -209,10 +215,14 @@ function createDBStorage() {
     }
   }
 
-  async function saveStatus({ userId, questionId, status }) {
+  async function saveStatus({
+    userId, questionId, status, userFirstName, userLastName, userName,
+  }) {
     try {
-      const sql = 'INSERT INTO `prefvotebot_statuses` (`QuestionId`, `User`, `Status`) VALUES (?, ?, ?)';
-      const data = [questionId, userId, status];
+      const sql = `INSERT INTO prefvotebot_statuses
+        (QuestionId, User, Status, UserFirstName, UserLastName, UserName)
+        VALUES (?, ?, ?, ?, ?, ?)`;
+      const data = [questionId, userId, status, userFirstName, userLastName, userName];
       const result = await storagePool.query(sql, data);
       return result;
     } catch (e) {
@@ -221,14 +231,16 @@ function createDBStorage() {
   }
 
   async function saveQuestionWithOptions({
-    userId, header, text, options,
+    userId, header, text, options, userFirstName, userLastName, userName,
   }) {
     try {
-      const questionSQL = 'INSERT INTO `prefvotebot_questions` (`Header`, `Text`, `Owner`) VALUES (?, ?, ?)';
-      const questionData = [header, text, userId];
+      const questionSQL = `INSERT INTO prefvotebot_questions
+        (Header, Text, Owner, UserFirstName, UserLastName, UserName)
+        VALUES (?, ?, ?, ?, ?, ?)`;
+      const questionData = [header, text, userId, userFirstName, userLastName, userName];
       const questionResult = await storagePool.query(questionSQL, questionData);
       const questionId = questionResult[0].insertId;
-      const optionsSQL = 'INSERT INTO `prefvotebot_options` (`QuestionId`, `Name`) VALUES ?';
+      const optionsSQL = 'INSERT INTO prefvotebot_options (QuestionId, Name) VALUES ?';
       const optionsData = [options.map((element) => [questionId, element])];
       await storagePool.query(optionsSQL, optionsData);
       return questionId;
