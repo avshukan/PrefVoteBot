@@ -288,6 +288,11 @@ function botReducer(state, action) {
         case COMMANDS.VOTEDBYME:
           replyHeader = 'Последние 10 опросов с Вашим участием:';
           break;
+        case COMMANDS.FIND:
+          replyHeader = questions.length === 0
+            ? 'Подходящие опросы не найдены'
+            : '10 опросов, подходящие под условия поиска:';
+          break;
         default:
           replyHeader = 'Список найденных опросов:';
       }
@@ -311,11 +316,11 @@ function botReducer(state, action) {
 
     case ACTIONS.ERROR: {
       const newState = { ...state };
-      const { userId } = action.payload;
+      const { userId, error } = action.payload;
       newState[userId] = {
         ...state[userId],
         type: STATES.DEFAULT,
-        reply: ERROR_MESSAGE,
+        reply: error.message || ERROR_MESSAGE,
         buttons: [BUTTONS.NEW],
       };
       return newState;

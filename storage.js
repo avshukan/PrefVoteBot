@@ -91,6 +91,33 @@ function createDBStorage() {
     }
   }
 
+  async function getQuestionsWithText(textArray = []) {
+    try {
+      const headerWhere = textArray.map((item) => `HEADER LIKE '%${item}%'`);
+      const textWhere = textArray.map((item) => `TEXT LIKE '%${item}%'`);
+      const sql = `
+        SELECT pq.Id, Header, Text, Voters
+        FROM prefvotebot_questions pq
+        LEFT OUTER JOIN (
+          SELECT QuestionId, COUNT(DISTINCT User) AS Voters
+          FROM prefvotebot_statuses
+          WHERE Status = "ANSWERED"
+          GROUP BY QuestionId
+        ) pv
+        ON (pq.Id = pv.QuestionId)
+        WHERE (${headerWhere.join(' AND ')}) OR (${textWhere.join(' AND ')})
+        ORDER BY CreatedDate DESC`;
+      const [questions] = await storagePool.execute(sql);
+      return questions.map(({
+        Id, Header, Text, Voters,
+      }) => ({
+        id: Id, header: Header, text: Text, voters: Voters,
+      }));
+    } catch (e) {
+      return e;
+    }
+  }
+
   async function getQuestionStatus(questionId, userId) {
     try {
       const sql = 'SELECT * FROM `prefvotebot_statuses` WHERE `QuestionId` = ? AND `User` = ?';
@@ -274,6 +301,7 @@ function createDBStorage() {
     getQuestion,
     getQuestionsCreatedByUser,
     getQuestionsVotedByUser,
+    getQuestionsWithText,
     getQuestionStatus,
     getQuestionWithOptions,
     getQuestionsPopular,
