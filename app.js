@@ -26,20 +26,20 @@ if (TELEGRAM_TOKEN === undefined) {
 }
 const bot = new Telegraf(TELEGRAM_TOKEN);
 bot.use(Telegraf.log());
-bot.start(handlers.startHandler());
+bot.start(handlers.startHandler);
 bot.command(COMMANDS.ABOUT, handlers.commandAboutHandler);
 bot.command(COMMANDS.CREATEDBYME, handlers.commandCreatedByMeHandler);
 bot.command(COMMANDS.FIND, handlers.commandFindHandler);
 bot.command(COMMANDS.HELP, handlers.commandHelpHandler);
-bot.command(COMMANDS.NEW, handlers.commandNewHandler());
+bot.command(COMMANDS.NEW, handlers.commandNewHandler);
 bot.command(COMMANDS.POPULAR, handlers.commandPopularHandler);
 bot.command(COMMANDS.RANDOM, handlers.commandRandomHandler);
 bot.command(COMMANDS.SETTINGS, handlers.commandSettingsHandler);
 bot.command(COMMANDS.VOTEDBYME, handlers.commandVotedByMeHandler);
-bot.hears(BUTTONS.CANCEL, handlers.hearsCancelHandler());
-bot.hears(BUTTONS.DONE, handlers.hearsDoneHandler());
-bot.hears(BUTTONS.RESULTS, handlers.hearsResultsHandler());
-bot.on('text', handlers.onTextHandler());
+bot.hears(BUTTONS.CANCEL, handlers.hearsCancelHandler);
+bot.hears(BUTTONS.DONE, handlers.hearsDoneHandler);
+bot.hears(BUTTONS.RESULTS, handlers.hearsResultsHandler);
+bot.on('text', handlers.onTextHandler);
 // bot.on('text', store.dispatch({ type: 'NEW MESSAGE' }));
 
 // bot.command('inline', (ctx) => {
