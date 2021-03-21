@@ -400,7 +400,7 @@ function botHandlers(initStore, initStorage) {
         type: ACTIONS.HEARS_RESULTS,
         payload: { userId, questionId },
       });
-      hearsResultsHandler()(context);
+      hearsResultsHandler(context);
       return;
     }
     // NOT ANSWERED
