@@ -55,19 +55,81 @@ function botHandlers(initStore, initStorage) {
       last_name: userLastName,
       username: userName,
     } = context.message.from;
-    const { header, text, options } = store.getUserState(userId);
     try {
-      const questionId = await storage.saveQuestionWithOptions({
-        userId, header, text, options, userFirstName, userLastName, userName,
-      });
-      store.dispatch({
-        type: ACTIONS.HEARS_DONE,
-        payload: {
-          userId, questionId, header, text, options,
-        },
-      });
-      const { reply, buttons } = store.getUserState(userId);
-      context.reply(reply, getExtraReply(buttons));
+      const { type, header, text, options, optionsSelected } = store.getUserState(userId);
+      switch (type) {
+        case STATES.CREATE_OPTION: {
+          const questionId = await storage.saveQuestionWithOptions({
+            userId, header, text, options, userFirstName, userLastName, userName,
+          });
+          store.dispatch({
+            type: ACTIONS.HEARS_DONE,
+            payload: {
+              userId, questionId, header, text, options,
+            },
+          });
+          const { reply, buttons } = store.getUserState(userId);
+          context.reply(reply, getExtraReply(buttons));
+          break;
+        }
+        case STATES.ANSWER: {
+          console.log({
+            userId,
+            optionsSelected,
+            options,
+            userFirstName,
+            userLastName,
+            userName,
+          })
+          console.log('case STATES.ANSWER: { 1')
+          store.dispatch({
+            type: ACTIONS.APPEND_MESSAGE_TO_QUEUE,
+            payload: { userId, messageId: userMessageId },
+          });
+          console.log('case STATES.ANSWER: { 2')
+          await storage.saveRanks({
+            userId,
+            optionsSelected,
+            options,
+            userFirstName,
+            userLastName,
+            userName,
+          });
+          console.log('case STATES.ANSWER: { 3')
+          await storage.saveStatus({
+            userId,
+            questionId,
+            status: 'ANSWERED',
+            userFirstName,
+            userLastName,
+            userName,
+          });
+          /////////////////////////////
+          /*
+          store.dispatch({
+            type: ACTIONS.GET_OPTION,
+            payload: { userId, options, optionsSelected },
+          });
+          const { reply, buttons } = store.getUserState(userId);
+          clearMessages(context);
+          context
+            .reply(reply, getExtraReply(buttons))
+            .then((message) => {
+              store.dispatch({
+                type: ACTIONS.APPEND_MESSAGE_TO_QUEUE,
+                payload: { userId, messageId: message.message_id },
+              });
+            })
+            .catch((error) => {
+              console.log(error);
+            });
+            */
+          /////////////////////////////
+          break;
+        }
+        default: {
+        }
+      }
     } catch {
       store.dispatch({
         type: ACTIONS.ERROR,
@@ -229,12 +291,15 @@ function botHandlers(initStore, initStorage) {
         });
         const selectedOption = options.splice(optionIndex, 1);
         optionsSelected.push(...selectedOption);
+        console.log('...before saveRanks')
         if (options.length === 1) {
           const lastOption = options.pop();
           optionsSelected.push(lastOption);
+          console.log('before saveRanks')
           await storage.saveRanks({
             userId,
-            options: optionsSelected,
+            optionsSelected,
+            options,
             userFirstName,
             userLastName,
             userName,

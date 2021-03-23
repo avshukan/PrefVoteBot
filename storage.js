@@ -247,15 +247,22 @@ function createDBStorage() {
   }
 
   async function saveRanks({
-    userId, options, userFirstName, userLastName, userName,
+    userId, optionsSelected, options, userFirstName, userLastName, userName,
   }) {
+    console.log('save ranks optionsSelected', optionsSelected)
+    console.log('save ranks options', options)
     try {
       const sql = `INSERT INTO prefvotebot_ranks
         (QuestionId, OptionId, Rank, User, UserFirstName, UserLastName, UserName)
         VALUES ?`;
-      const data = [options.map((item, index) => [
-        item.QuestionId, item.Id, index + 1, userId, userFirstName, userLastName, userName,
-      ])];
+      const data = [
+        ...optionsSelected.map((item, index) => [
+          item.QuestionId, item.Id, index + 1, userId, userFirstName, userLastName, userName,
+        ]),
+        ...options.map((item) => [
+          item.QuestionId, item.Id, optionsSelected.length + 1, userId, userFirstName, userLastName, userName,
+        ]),
+      ];
       const result = await storagePool.query(sql, data);
       return result;
     } catch (e) {

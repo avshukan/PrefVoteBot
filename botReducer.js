@@ -128,13 +128,15 @@ function botReducer(state, action) {
         optionsSelected.forEach((option, index) => {
           reply += `\n${index + 1}. ${option.Name}`;
         });
-        buttons = ['👁 Results'];
+        buttons = [BUTTONS.RESULTS];
       } else {
         reply = `<b>${header}</b>\n${text}\nВы уже выбрали:`;
         optionsSelected.forEach((option, index) => {
           reply += `\n${index + 1}. ${option.Name}`;
         });
         buttons = [...options.map((option) => option.Name), BUTTONS.CANCEL];
+        if (optionsSelected.length > 0)
+          buttons.push(BUTTONS.DONE);
       }
       newState[userId] = {
         ...state[userId],
@@ -299,8 +301,7 @@ function botReducer(state, action) {
       const reply = questions.reduce((acc, item, index) => ((index < 10)
         ? `${`${acc}\n\n`
         + `${index + 1}. <b>${item.header}</b>\n`
-        + `${item.text}\n`}${
-          item.voters ? `Количество участников: ${item.voters}\n` : ''
+        + `${item.text}\n`}${item.voters ? `Количество участников: ${item.voters}\n` : ''
         }${DEEPLINK_TOKEN}start=${item.id}`
         : acc), replyHeader);
       return {
@@ -320,7 +321,7 @@ function botReducer(state, action) {
       newState[userId] = {
         ...state[userId],
         type: STATES.DEFAULT,
-        reply: error.message || ERROR_MESSAGE,
+        reply: (error && error.message) || ERROR_MESSAGE,
         buttons: [BUTTONS.NEW],
       };
       return newState;
