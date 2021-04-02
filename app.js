@@ -37,6 +37,7 @@ bot.command(COMMANDS.RANDOM, handlers.commandRandomHandler);
 bot.command(COMMANDS.SETTINGS, handlers.commandSettingsHandler);
 bot.command(COMMANDS.VOTEDBYME, handlers.commandVotedByMeHandler);
 bot.hears(BUTTONS.CANCEL, handlers.hearsCancelHandler);
+bot.hears(BUTTONS.COMPLETE, handlers.hearsCompleteHandler);
 bot.hears(BUTTONS.DONE, handlers.hearsDoneHandler);
 bot.hears(BUTTONS.RESULTS, handlers.hearsResultsHandler);
 bot.on('text', handlers.onTextHandler);

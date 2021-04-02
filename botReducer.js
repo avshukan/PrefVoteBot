@@ -136,7 +136,7 @@ function botReducer(state, action) {
         });
         buttons = [...options.map((option) => option.Name), BUTTONS.CANCEL];
         if (optionsSelected.length > 0)
-          buttons.push(BUTTONS.DONE);
+          buttons.push(BUTTONS.COMPLETE);
       }
       newState[userId] = {
         ...state[userId],
@@ -199,6 +199,44 @@ function botReducer(state, action) {
         type: STATES.DEFAULT,
         reply,
         buttons: [BUTTONS.NEW],
+      };
+      return newState;
+    }
+
+    case ACTIONS.HEARS_COMPLETE: {
+      const newState = { ...state };
+      const {
+        userId,
+        options,
+        optionsSelected,
+      } = action.payload;
+      const { header, text } = state[userId];
+      let reply;
+      let buttons;
+      reply ='case ACTIONS.HEARS_COMPLETE: {';
+      buttons = ['case ACTIONS.HEARS_COMPLETE: {', BUTTONS.CANCEL];
+      // if (options.length === 0) {
+      //   reply = `Вы завершили опрос <b>${header}</b> \nВаш выбор:`;
+      //   optionsSelected.forEach((option, index) => {
+      //     reply += `\n${index + 1}. ${option.Name}`;
+      //   });
+      //   buttons = [BUTTONS.RESULTS];
+      // } else {
+      //   reply = `<b>${header}</b>\n${text}\nВы уже выбрали:`;
+      //   optionsSelected.forEach((option, index) => {
+      //     reply += `\n${index + 1}. ${option.Name}`;
+      //   });
+      //   buttons = [...options.map((option) => option.Name), BUTTONS.CANCEL];
+      //   if (optionsSelected.length > 0)
+      //     buttons.push(BUTTONS.DONE);
+      // }
+      newState[userId] = {
+        ...state[userId],
+        type: STATES.DEFAULT,
+        options,
+        optionsSelected,
+        reply,
+        buttons,
       };
       return newState;
     }

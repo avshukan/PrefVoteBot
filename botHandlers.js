@@ -48,6 +48,16 @@ function botHandlers(initStore, initStorage) {
     context.reply(reply, getExtraReply(buttons));
   }
 
+  function hearsCompleteHandler(context) {
+    const userId = context.message.from.id;
+    store.dispatch({
+      type: ACTIONS.HEARS_COMPLETE,
+      payload: { userId },
+    });
+    const { reply, buttons } = store.getUserState(userId);
+    context.reply(reply, getExtraReply(buttons));
+  }
+
   async function hearsDoneHandler(context) {
     const {
       id: userId,
@@ -535,6 +545,7 @@ function botHandlers(initStore, initStorage) {
     commandSettingsHandler,
     commandVotedByMeHandler,
     hearsCancelHandler,
+    hearsCompleteHandler,
     hearsDoneHandler,
     hearsResultsHandler,
     onTextHandler,
