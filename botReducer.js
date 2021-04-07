@@ -135,8 +135,7 @@ function botReducer(state, action) {
           reply += `\n${index + 1}. ${option.Name}`;
         });
         buttons = [...options.map((option) => option.Name), BUTTONS.CANCEL];
-        if (optionsSelected.length > 0)
-          buttons.push(BUTTONS.COMPLETE);
+        if (optionsSelected.length > 0) buttons.push(BUTTONS.COMPLETE);
       }
       newState[userId] = {
         ...state[userId],
@@ -210,26 +209,17 @@ function botReducer(state, action) {
         options,
         optionsSelected,
       } = action.payload;
-      const { header, text } = state[userId];
-      let reply;
-      let buttons;
-      reply ='case ACTIONS.HEARS_COMPLETE: {';
-      buttons = ['case ACTIONS.HEARS_COMPLETE: {', BUTTONS.CANCEL];
-      // if (options.length === 0) {
-      //   reply = `Вы завершили опрос <b>${header}</b> \nВаш выбор:`;
-      //   optionsSelected.forEach((option, index) => {
-      //     reply += `\n${index + 1}. ${option.Name}`;
-      //   });
-      //   buttons = [BUTTONS.RESULTS];
-      // } else {
-      //   reply = `<b>${header}</b>\n${text}\nВы уже выбрали:`;
-      //   optionsSelected.forEach((option, index) => {
-      //     reply += `\n${index + 1}. ${option.Name}`;
-      //   });
-      //   buttons = [...options.map((option) => option.Name), BUTTONS.CANCEL];
-      //   if (optionsSelected.length > 0)
-      //     buttons.push(BUTTONS.DONE);
-      // }
+      const { header } = state[userId];
+      let reply = `Вы завершили опрос <b>${header}</b> \nВаш выбор:`;
+      optionsSelected.forEach((option, index) => {
+        reply += `\n${index + 1}. ${option.Name}`;
+      });
+      const counterFrom = optionsSelected.length + 1;
+      const counterTo = optionsSelected.length + options.length;
+      options.forEach((option) => {
+        reply += `\n${counterFrom}-${counterTo}. ${option.Name}`;
+      });
+      const buttons = [BUTTONS.RESULTS];
       newState[userId] = {
         ...state[userId],
         type: STATES.DEFAULT,
