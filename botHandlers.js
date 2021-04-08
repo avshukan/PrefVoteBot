@@ -503,7 +503,10 @@ function botHandlers(initStore, initStorage) {
       if (context.startPayload === '') {
         console.log('context.startPayload === \'\' => return;');
         console.log('Здесь должно быть какое-то приветственное сообщение');
-        const reply = 'Здесь должно быть какое-то приветственное сообщение';
+        const reply = 'Привет!\n'
+          + 'Можешь набрать /about и немного узнать о преференциальных голосованиях.\n'
+          + 'Можешь набрать /new и создать свой опрос.\n'
+          + 'Или набрать / и ознакомиться со списком всех доступных команд.\n';
         context.replyWithMarkdown(reply);
         return;
       }
