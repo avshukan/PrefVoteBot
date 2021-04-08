@@ -34,7 +34,7 @@ function botHandlers(initStore, initStorage) {
         });
       })
       .catch((error) => {
-        console.log(error);
+        console.error(error);
       });
   }
 
@@ -97,7 +97,7 @@ function botHandlers(initStore, initStorage) {
           });
         })
         .catch((error) => {
-          console.log(error);
+          console.error(error);
         });
     } else {
       store.dispatch({
@@ -129,7 +129,8 @@ function botHandlers(initStore, initStorage) {
       });
       const { reply, buttons } = store.getUserState(userId);
       context.reply(reply, getExtraReply(buttons));
-    } catch {
+    } catch (error) {
+      console.error(error);
       store.dispatch({
         type: ACTIONS.ERROR,
         payload: { userId },
@@ -168,7 +169,8 @@ function botHandlers(initStore, initStorage) {
       });
       const { reply, buttons } = store.getUserState(userId);
       context.reply(reply, getExtraReply(buttons));
-    } catch {
+    } catch (error) {
+      console.error(error);
       store.dispatch({
         type: ACTIONS.ERROR,
         payload: { userId },
@@ -210,7 +212,7 @@ function botHandlers(initStore, initStorage) {
             });
           })
           .catch((error) => {
-            console.log(error);
+            console.error(error);
           });
         break;
       }
@@ -231,7 +233,7 @@ function botHandlers(initStore, initStorage) {
             });
           })
           .catch((error) => {
-            console.log(error);
+            console.error(error);
           });
         break;
       }
@@ -253,7 +255,7 @@ function botHandlers(initStore, initStorage) {
             });
           })
           .catch((error) => {
-            console.log(error);
+            console.error(error);
           });
         break;
       }
@@ -278,7 +280,7 @@ function botHandlers(initStore, initStorage) {
               });
             })
             .catch((error) => {
-              console.log(error);
+              console.error(error);
             });
           return;
         }
@@ -324,7 +326,7 @@ function botHandlers(initStore, initStorage) {
             });
           })
           .catch((error) => {
-            console.log(error);
+            console.error(error);
           });
         break;
       }
@@ -360,7 +362,8 @@ function botHandlers(initStore, initStorage) {
       });
       const { reply, buttons } = store.getUserState(userId);
       context.reply(reply, getExtraReply(buttons));
-    } catch {
+    } catch (error) {
+      console.error(error);
       store.dispatch({
         type: ACTIONS.ERROR,
         payload: { userId },
@@ -380,7 +383,8 @@ function botHandlers(initStore, initStorage) {
       });
       const { reply, buttons } = store.getUserState(userId);
       context.reply(reply, getExtraReply(buttons));
-    } catch {
+    } catch (error) {
+      console.error(error);
       store.dispatch({
         type: ACTIONS.ERROR,
         payload: { userId },
@@ -404,6 +408,7 @@ function botHandlers(initStore, initStorage) {
       const { reply, buttons } = store.getUserState(userId);
       context.reply(reply, getExtraReply(buttons));
     } catch (error) {
+      console.error(error);
       store.dispatch({
         type: ACTIONS.ERROR,
         payload: { userId, error },
@@ -433,7 +438,8 @@ function botHandlers(initStore, initStorage) {
       });
       const { reply, buttons } = store.getUserState(userId);
       context.reply(reply, getExtraReply(buttons));
-    } catch {
+    } catch (error) {
+      console.error(error);
       store.dispatch({
         type: ACTIONS.ERROR,
         payload: { userId },
@@ -487,7 +493,7 @@ function botHandlers(initStore, initStorage) {
         });
       })
       .catch((error) => {
-        console.log(error);
+        console.error(error);
       });
   }
 
@@ -498,21 +504,19 @@ function botHandlers(initStore, initStorage) {
 
   async function startHandler(context) {
     const userId = context.message.from.id;
+    if (context.startPayload === '') {
+      const reply = 'Привет!\n'
+        + 'Можешь набрать /about и немного узнать о преференциальных голосованиях.\n'
+        + 'Можешь набрать /new и создать свой опрос.\n'
+        + 'Или набрать / и ознакомиться со списком всех доступных команд.\n';
+      context.replyWithMarkdown(reply);
+      return;
+    }
     try {
-      // const userState = store.getUserState(userId);
-      if (context.startPayload === '') {
-        console.log('context.startPayload === \'\' => return;');
-        console.log('Здесь должно быть какое-то приветственное сообщение');
-        const reply = 'Привет!\n'
-          + 'Можешь набрать /about и немного узнать о преференциальных голосованиях.\n'
-          + 'Можешь набрать /new и создать свой опрос.\n'
-          + 'Или набрать / и ознакомиться со списком всех доступных команд.\n';
-        context.replyWithMarkdown(reply);
-        return;
-      }
       const questionId = parseInt(context.startPayload, 10);
       await launchQuestion(context, questionId);
-    } catch {
+    } catch (error) {
+      console.error(error);
       store.dispatch({
         type: ACTIONS.ERROR,
         payload: { userId },
