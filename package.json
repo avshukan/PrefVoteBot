@@ -1,6 +1,6 @@
 {
   "name": "PrefVoteBot",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "scripts": {
     "start": "node app.js > app.log 2> app.err",
     "lint": "eslint --ignore-path .gitignore .",
