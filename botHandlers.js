@@ -50,12 +50,14 @@ function botHandlers(initStore, initStorage) {
 
   async function hearsCompleteHandler(context) {
     const {
-      id: userId,
-      first_name: userFirstName,
-      last_name: userLastName,
-      username: userName,
-    } = context.message.from;
-    const userMessageId = context.message.message_id;
+      from: {
+        id: userId,
+        first_name: userFirstName,
+        last_name: userLastName,
+        username: userName,
+      },
+      message_id: userMessageId,
+    } = context.message;
     const {
       questionId, options, optionsSelected, type,
     } = store.getUserState(userId);
