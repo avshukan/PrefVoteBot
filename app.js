@@ -6,38 +6,10 @@
 require('dotenv').config();
 const { Telegraf } = require('telegraf');
 
-const {
-  TELEGRAM_TOKEN,
-  // MYSQL_HOSTNAME,
-  // MYSQL_DATABASE,
-  // MYSQL_USERNAME,
-  // MYSQL_PASSWORD,
-  // MYSQL_POOLSIZE,
-} = process.env;
+const { TELEGRAM_TOKEN } = process.env;
 const createDBStorage = require('./storage');
 
 const storage = createDBStorage();
-
-// const mysql = require('mysql2');
-
-// const pool = mysql.createPool({
-//   connectionLimit: MYSQL_POOLSIZE,
-//   host: MYSQL_HOSTNAME,
-//   user: MYSQL_USERNAME,
-//   password: MYSQL_PASSWORD,
-//   database: MYSQL_DATABASE,
-// });
-
-// const promisePool = pool.promise();
-
-if (TELEGRAM_TOKEN === undefined) {
-  throw new Error('TELEGRAM_TOKEN must be provided!');
-}
-
-const bot = new Telegraf(TELEGRAM_TOKEN);
-
-bot.use(Telegraf.log());
-
 const initialState = {};
 const botReducer = require('./botReducer');
 const createStore = require('./createStore');
@@ -46,32 +18,29 @@ const store = createStore(botReducer, initialState);
 const botHandlers = require('./botHandlers');
 
 const handlers = botHandlers(store, storage);
+const { BUTTONS } = require('./button_types');
+const { COMMANDS } = require('./command_types');
 
-// start - приветственное сообщение
-// new - создать опрос
-// createdbyme - опросы, созданные мной
-// votedbyme - опросы, в которых я принял участие
-// find - поиск опроса
-// about - информация о боте
-// help - в случае проблем
-// settings - настройки
-// random - случайный опрос
-// popular - самые популярные опросы
-
-bot.start(handlers.startHandler());
-bot.command('createdbyme', handlers.commandCreatedByMeHandler);
-bot.command('about', handlers.commandAboutHandler);
-bot.command('find', handlers.commandFindHandler);
-bot.command('help', handlers.commandHelpHandler);
-bot.command('new', handlers.commandNewHandler());
-bot.command('popular', handlers.commandPopularHandler);
-bot.command('random', handlers.commandRandomHandler);
-bot.command('settings', handlers.commandSettingsHandler);
-bot.command('votedbyme', handlers.commandVotedByMeHandler);
-bot.hears('❌ Cancel', handlers.hearsCancelHandler());
-bot.hears('✔️ Done', handlers.hearsDoneHandler());
-bot.hears('👁 Results', handlers.hearsResultsHandler());
-bot.on('text', handlers.onTextHandler());
+if (TELEGRAM_TOKEN === undefined) {
+  throw new Error('TELEGRAM_TOKEN must be provided!');
+}
+const bot = new Telegraf(TELEGRAM_TOKEN);
+bot.use(Telegraf.log());
+bot.start(handlers.startHandler);
+bot.command(COMMANDS.ABOUT, handlers.commandAboutHandler);
+bot.command(COMMANDS.CREATEDBYME, handlers.commandCreatedByMeHandler);
+bot.command(COMMANDS.FIND, handlers.commandFindHandler);
+bot.command(COMMANDS.HELP, handlers.commandHelpHandler);
+bot.command(COMMANDS.NEW, handlers.commandNewHandler);
+bot.command(COMMANDS.POPULAR, handlers.commandPopularHandler);
+bot.command(COMMANDS.RANDOM, handlers.commandRandomHandler);
+bot.command(COMMANDS.SETTINGS, handlers.commandSettingsHandler);
+bot.command(COMMANDS.VOTEDBYME, handlers.commandVotedByMeHandler);
+bot.hears(BUTTONS.CANCEL, handlers.hearsCancelHandler);
+bot.hears(BUTTONS.COMPLETE, handlers.hearsCompleteHandler);
+bot.hears(BUTTONS.DONE, handlers.hearsDoneHandler);
+bot.hears(BUTTONS.RESULTS, handlers.hearsResultsHandler);
+bot.on('text', handlers.onTextHandler);
 // bot.on('text', store.dispatch({ type: 'NEW MESSAGE' }));
 
 // bot.command('inline', (ctx) => {

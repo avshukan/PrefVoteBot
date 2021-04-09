@@ -1,8 +1,11 @@
 const { ACTIONS } = require('./action_types');
 const { STATES } = require('./state_types');
+const { BUTTONS } = require('./button_types');
+const { COMMANDS } = require('./command_types');
 
 const { DEEPLINK_TOKEN } = process.env;
 const MOCK_MESSAGE = 'Данный функционал находится в разработке';
+const ERROR_MESSAGE = 'Извините, произошла ошибка. Что-то пошло не так...';
 
 function botReducer(state, action) {
   switch (action.type) {
@@ -15,7 +18,7 @@ function botReducer(state, action) {
         id: userId,
         type: STATES.CREATE_HEADER,
         reply: 'Отправьте заголовок опроса',
-        buttons: ['❌ Cancel'],
+        buttons: [BUTTONS.CANCEL],
       };
       return newState;
     }
@@ -36,7 +39,7 @@ function botReducer(state, action) {
         header,
         clearMessagesQueue: [...(state[userId].clearMessagesQueue || []), userMessageId],
         reply,
-        buttons: ['❌ Cancel'],
+        buttons: [BUTTONS.CANCEL],
       };
       return newState;
     }
@@ -56,7 +59,7 @@ function botReducer(state, action) {
         options: [],
         clearMessagesQueue: [...(state[userId].clearMessagesQueue || []), userMessageId],
         reply,
-        buttons: ['❌ Cancel'],
+        buttons: [BUTTONS.CANCEL],
       };
       return newState;
     }
@@ -69,7 +72,7 @@ function botReducer(state, action) {
         + `Вопрос: ${state[userId].text}\n`
         + 'Варианты ответов:';
       const reply = options.reduce((acc, item) => `${acc}\n - ${item}`, defaultReply);
-      const buttons = (options.length > 1) ? ['✔️ Done', '❌ Cancel'] : ['❌ Cancel'];
+      const buttons = (options.length > 1) ? [BUTTONS.DONE, BUTTONS.CANCEL] : [BUTTONS.CANCEL];
       newState[userId] = {
         ...state[userId],
         userId,
@@ -93,7 +96,7 @@ function botReducer(state, action) {
         options,
       } = action.payload;
       const reply = `<b>${header}</b>\n${text}`;
-      const buttons = [...options.map((option) => option.Name), '❌ Cancel'];
+      const buttons = [...options.map((option) => option.Name), BUTTONS.CANCEL];
       newState[userId] = {
         ...state[userId],
         userId,
@@ -125,13 +128,14 @@ function botReducer(state, action) {
         optionsSelected.forEach((option, index) => {
           reply += `\n${index + 1}. ${option.Name}`;
         });
-        buttons = ['👁 Results'];
+        buttons = [BUTTONS.RESULTS];
       } else {
         reply = `<b>${header}</b>\n${text}\nВы уже выбрали:`;
         optionsSelected.forEach((option, index) => {
           reply += `\n${index + 1}. ${option.Name}`;
         });
-        buttons = [...options.map((option) => option.Name), '❌ Cancel'];
+        buttons = [...options.map((option) => option.Name), BUTTONS.CANCEL];
+        if (optionsSelected.length > 0) buttons.push(BUTTONS.COMPLETE);
       }
       newState[userId] = {
         ...state[userId],
@@ -152,14 +156,15 @@ function botReducer(state, action) {
       const {
         header, text, options, optionsSelected,
       } = state[userId];
-      const errorExplaination = optionsSelected.findIndex((optionSelected) => optionSelected.Name === answer) === -1
+      const isOptionFound = optionsSelected.findIndex((item) => item.Name === answer) === -1;
+      const errorExplaination = isOptionFound
         ? `значения "<b>${answer}</b>" нет в списке вариантов`
         : `значение "<b>${answer}</b>" уже было выбрано вами`;
       const defaultReply = `Простите, ${errorExplaination}<b>\n`
         + `${header}</b>\n`
         + `${text}${optionsSelected.length === 0 ? '' : '\nВы уже выбрали:'}`;
       const reply = optionsSelected.reduce((acc, selectedOption, index) => `${acc}\n${index + 1}. ${selectedOption.Name}`, defaultReply);
-      const buttons = [...options.map((option) => option.Name), '❌ Cancel'];
+      const buttons = [...options.map((option) => option.Name), BUTTONS.CANCEL];
       newState[userId] = {
         ...state[userId],
         userId,
@@ -173,9 +178,8 @@ function botReducer(state, action) {
     case ACTIONS.HEARS_CANCEL: {
       const newState = { ...state };
       const { userId } = action.payload;
-      let reply = 'Действие отменено';
-      const type = state[userId] ? state[userId].type : STATES.DEFAULT;
-      switch (type) {
+      let reply;
+      switch (state[userId] && state[userId].type) {
         case STATES.CREATE_HEADER:
         case STATES.CREATE_TEXT:
         case STATES.CREATE_OPTION:
@@ -184,6 +188,8 @@ function botReducer(state, action) {
         case STATES.ANSWER:
           reply = 'Участие в опросе прервано';
           break;
+        default:
+          reply = 'Действие отменено';
       }
       newState[userId] = {
         ...state[userId],
@@ -191,7 +197,36 @@ function botReducer(state, action) {
         id: userId,
         type: STATES.DEFAULT,
         reply,
-        buttons: ['/new'],
+        buttons: [BUTTONS.NEW],
+      };
+      return newState;
+    }
+
+    case ACTIONS.HEARS_COMPLETE: {
+      const newState = { ...state };
+      const {
+        userId,
+        options,
+        optionsSelected,
+      } = action.payload;
+      const { header } = state[userId];
+      let reply = `Вы завершили опрос <b>${header}</b> \nВаш выбор:`;
+      optionsSelected.forEach((option, index) => {
+        reply += `\n${index + 1}. ${option.Name}`;
+      });
+      const counterFrom = optionsSelected.length + 1;
+      const counterTo = optionsSelected.length + options.length;
+      options.forEach((option) => {
+        reply += `\n${counterFrom}-${counterTo}. ${option.Name}`;
+      });
+      const buttons = [BUTTONS.RESULTS];
+      newState[userId] = {
+        ...state[userId],
+        type: STATES.DEFAULT,
+        options,
+        optionsSelected,
+        reply,
+        buttons,
       };
       return newState;
     }
@@ -265,7 +300,57 @@ function botReducer(state, action) {
           + 'Для подведения итогов ботом используется метод подсчёта, разработанный Маркусом Шульце.\n\n'
           + 'https://ru.wikipedia.org/wiki/Преференциальное_голосование\n'
           + 'https://ru.wikipedia.org/wiki/Метод_Шульце',
-        buttons: ['/new'],
+        buttons: [BUTTONS.NEW],
+      };
+      return newState;
+    }
+
+    case ACTIONS.GET_QUESTIONS_LIST: {
+      const { userId, questions = [], command } = action.payload;
+      let replyHeader;
+      switch (command) {
+        case COMMANDS.CREATEDBYME:
+          replyHeader = 'Последние 10 опросов, созданных Вами:';
+          break;
+        case COMMANDS.POPULAR:
+          replyHeader = '10 самых популярных опросов:';
+          break;
+        case COMMANDS.VOTEDBYME:
+          replyHeader = 'Последние 10 опросов с Вашим участием:';
+          break;
+        case COMMANDS.FIND:
+          replyHeader = questions.length === 0
+            ? 'Подходящие опросы не найдены'
+            : '10 опросов, подходящие под условия поиска:';
+          break;
+        default:
+          replyHeader = 'Список найденных опросов:';
+      }
+      const reply = questions.reduce((acc, item, index) => ((index < 10)
+        ? `${`${acc}\n\n`
+        + `${index + 1}. <b>${item.header}</b>\n`
+        + `${item.text}\n`}${item.voters ? `Количество участников: ${item.voters}\n` : ''
+        }${DEEPLINK_TOKEN}start=${item.id}`
+        : acc), replyHeader);
+      return {
+        ...state,
+        [userId]: {
+          ...state[userId],
+          type: STATES.DEFAULT,
+          reply,
+          buttons: [],
+        },
+      };
+    }
+
+    case ACTIONS.ERROR: {
+      const newState = { ...state };
+      const { userId, error } = action.payload;
+      newState[userId] = {
+        ...state[userId],
+        type: STATES.DEFAULT,
+        reply: (error && error.message) || ERROR_MESSAGE,
+        buttons: [BUTTONS.NEW],
       };
       return newState;
     }
@@ -277,7 +362,7 @@ function botReducer(state, action) {
         ...state[userId],
         type: STATES.DEFAULT,
         reply: MOCK_MESSAGE,
-        buttons: ['/new'],
+        buttons: [BUTTONS.NEW],
       };
       return newState;
     }
