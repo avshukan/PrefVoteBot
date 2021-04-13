@@ -27,6 +27,7 @@ if (TELEGRAM_TOKEN === undefined) {
 const bot = new Telegraf(TELEGRAM_TOKEN);
 bot.use(Telegraf.log());
 bot.start(handlers.startHandler);
+bot.action(/.+/, handlers.actionHandler);
 bot.command(COMMANDS.ABOUT, handlers.commandAboutHandler);
 bot.command(COMMANDS.CREATEDBYME, handlers.commandCreatedByMeHandler);
 bot.command(COMMANDS.FIND, handlers.commandFindHandler);
@@ -41,39 +42,6 @@ bot.hears(BUTTONS.COMPLETE, handlers.hearsCompleteHandler);
 bot.hears(BUTTONS.DONE, handlers.hearsDoneHandler);
 bot.hears(BUTTONS.RESULTS, handlers.hearsResultsHandler);
 bot.on('text', handlers.onTextHandler);
-
-/*
-const { Markup } = require('telegraf')
-const buttons = ['North', 'South', 'West', 'East']
-const selected = []
-
-bot.command('x', (ctx) => {
-  const keyboard = [];
-  buttons.forEach(button => {
-    keyboard.push(Markup.button.callback('+ ' + button, button))
-  })
-  return ctx.reply(
-    'Select directon',
-    Markup.inlineKeyboard(keyboard, {wrap: (btn, index, currentRow)
-      => currentRow.length >= (index + 1) / 2})
-  )
-})
-
-bot.hears(/\/wrap (\d+)/, (ctx) => {
-  return ctx.reply(
-    'Keyboard wrap',
-    Markup.keyboard(['one', 'two', 'three', 'four', 'five', 'six', 'seven'], {
-      columns: parseInt(ctx.match[1])
-    })
-  )
-})
-
-*/
-bot.action(/.+/, async (ctx) => {
-  console.log(ctx);
-  await ctx.answerCbQuery();
-  console.log(ctx.callbackQuery.data);
-});
 
 bot.launch();
 

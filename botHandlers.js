@@ -1,6 +1,7 @@
 const { ACTIONS } = require('./action_types');
 const { STATES } = require('./state_types');
 const { COMMANDS } = require('./command_types');
+const { BUTTONS } = require('./button_types');
 const { method } = require('./method');
 const getExtraReply = require('./getExtraReply');
 const getInlineReply = require('./getInlineReply');
@@ -343,6 +344,65 @@ function botHandlers(initStore, initStorage) {
     }
   }
 
+  async function actionHandler(context) {
+    console.log(context);
+    const {
+      id: userId,
+      first_name: userFirstName,
+      last_name: userLastName,
+      username: userName,
+    } = context.update.callback_query.from;
+    const info = context.update.callback_query.data;
+    const { questionId, options, optionsSelected } = store.getUserState(userId);
+    const optionIndex = options.findIndex((option) => option.Name === info);
+    console.log(
+      userId,
+      userFirstName,
+      userLastName,
+      userName,
+      questionId,
+      options,
+      optionsSelected,
+      optionIndex,
+    );
+    switch (info) {
+      case BUTTONS.CANCEL: {
+        await context.answerCbQuery(BUTTONS.CANCEL);
+        break;
+      }
+      default: {
+        const selectedOption = options.splice(optionIndex, 1);
+        optionsSelected.push(...selectedOption);
+        if (options.length === 1) {
+          const lastOption = options.pop();
+          optionsSelected.push(lastOption);
+          await storage.saveRanks({
+            userId,
+            optionsSelected,
+            options,
+            userFirstName,
+            userLastName,
+            userName,
+          });
+          await storage.saveStatus({
+            userId,
+            questionId,
+            status: 'ANSWERED',
+            userFirstName,
+            userLastName,
+            userName,
+          });
+        }
+        store.dispatch({
+          type: ACTIONS.GET_OPTION,
+          payload: { userId, options, optionsSelected },
+        });
+        const { reply, buttons } = store.getUserState(userId);
+        context.editMessageText(reply, getInlineReply(buttons));
+      }
+    }
+  }
+
   function commandAboutHandler(context) {
     const userId = context.message.from.id;
     store.dispatch({
@@ -530,6 +590,7 @@ function botHandlers(initStore, initStorage) {
 
   return {
     startHandler,
+    actionHandler,
     commandAboutHandler,
     commandCreatedByMeHandler,
     commandFindHandler,
