@@ -3,6 +3,7 @@ const { STATES } = require('./state_types');
 const { COMMANDS } = require('./command_types');
 const { method } = require('./method');
 const getExtraReply = require('./getExtraReply');
+const getInlineReply = require('./getInlineReply');
 
 function botHandlers(initStore, initStorage) {
   const store = initStore;
@@ -484,17 +485,18 @@ function botHandlers(initStore, initStorage) {
       },
     });
     const { reply, buttons } = store.getUserState(userId);
-    context
-      .reply(reply, getExtraReply(buttons))
-      .then((message) => {
-        store.dispatch({
-          type: ACTIONS.APPEND_MESSAGE_TO_QUEUE,
-          payload: { userId, messageId: message.message_id },
-        });
-      })
-      .catch((error) => {
-        console.error(error);
-      });
+    context.reply(reply, getInlineReply(buttons));
+    // context
+    // .reply(reply, getInlineReply(buttons))
+    // .then((message) => {
+    //   store.dispatch({
+    //     type: ACTIONS.APPEND_MESSAGE_TO_QUEUE,
+    //     payload: { userId, messageId: message.message_id },
+    //   });
+    // })
+    // .catch((error) => {
+    //   console.error(error);
+    // });
   }
 
   async function commandRandomHandler(context) {

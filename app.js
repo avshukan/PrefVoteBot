@@ -41,44 +41,39 @@ bot.hears(BUTTONS.COMPLETE, handlers.hearsCompleteHandler);
 bot.hears(BUTTONS.DONE, handlers.hearsDoneHandler);
 bot.hears(BUTTONS.RESULTS, handlers.hearsResultsHandler);
 bot.on('text', handlers.onTextHandler);
-// bot.on('text', store.dispatch({ type: 'NEW MESSAGE' }));
 
-// bot.command('inline', (ctx) => {
-//   return ctx.reply('<b>Coke</b> or <i>Pepsi?</i>', {
-//     parse_mode: 'HTML',
-//     ...Markup.inlineKeyboard([
-//       Markup.button.callback('Coke', 'Coke'),
-//       Markup.button.callback('Pepsi', 'Pepsi')
-//     ])
-//   })
-// })
+/*
+const { Markup } = require('telegraf')
+const buttons = ['North', 'South', 'West', 'East']
+const selected = []
 
-// bot.action('Dr Pepper', (ctx, next) => {
-//   return ctx.reply('👍').then(() => next())
-// })
+bot.command('x', (ctx) => {
+  const keyboard = [];
+  buttons.forEach(button => {
+    keyboard.push(Markup.button.callback('+ ' + button, button))
+  })
+  return ctx.reply(
+    'Select directon',
+    Markup.inlineKeyboard(keyboard, {wrap: (btn, index, currentRow)
+      => currentRow.length >= (index + 1) / 2})
+  )
+})
 
-// bot.action('plain', async (ctx) => {
-//   await ctx.answerCbQuery()
-//   await ctx.editMessageCaption('Caption', Markup.inlineKeyboard([
-//     Markup.button.callback('Plain', 'plain'),
-//     Markup.button.callback('Italic', 'italic')
-//   ]))
-// })
+bot.hears(/\/wrap (\d+)/, (ctx) => {
+  return ctx.reply(
+    'Keyboard wrap',
+    Markup.keyboard(['one', 'two', 'three', 'four', 'five', 'six', 'seven'], {
+      columns: parseInt(ctx.match[1])
+    })
+  )
+})
 
-// bot.action('italic', async (ctx) => {
-//   await ctx.answerCbQuery()
-//   await ctx.editMessageCaption('_Caption_', {
-//     parse_mode: 'Markdown',
-//     ...Markup.inlineKeyboard([
-//       Markup.button.callback('Plain', 'plain'),
-//       Markup.button.callback('* Italic *', 'italic')
-//     ])
-//   })
-// })
-
-// bot.action(/.+/, (ctx) => {
-//   return ctx.answerCbQuery(`Oh, ${ctx.match[0]}! Great choice`)
-// })
+*/
+bot.action(/.+/, async (ctx) => {
+  console.log(ctx);
+  await ctx.answerCbQuery();
+  console.log(ctx.callbackQuery.data);
+});
 
 bot.launch();
 
