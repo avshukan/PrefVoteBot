@@ -367,7 +367,12 @@ function botHandlers(initStore, initStorage) {
     );
     switch (info) {
       case BUTTONS.CANCEL: {
-        await context.answerCbQuery(BUTTONS.CANCEL);
+        store.dispatch({
+          type: ACTIONS.HEARS_CANCEL,
+          payload: { userId, questionId },
+        });
+        const { reply, buttons } = store.getUserState(userId);
+        context.editMessageText(reply, getInlineReply(buttons));
         break;
       }
       default: {

@@ -177,7 +177,7 @@ function botReducer(state, action) {
 
     case ACTIONS.HEARS_CANCEL: {
       const newState = { ...state };
-      const { userId } = action.payload;
+      const { userId, questionId } = action.payload;
       let reply;
       switch (state[userId] && state[userId].type) {
         case STATES.CREATE_HEADER:
@@ -186,7 +186,7 @@ function botReducer(state, action) {
           reply = 'Создание опроса отменено';
           break;
         case STATES.ANSWER:
-          reply = 'Участие в опросе прервано';
+          reply = `Участие в опросе прервано.\nВы можете возобновить участие в опросе по ссылке\n${DEEPLINK_TOKEN}start=${questionId}`;
           break;
         default:
           reply = 'Действие отменено';
@@ -194,10 +194,9 @@ function botReducer(state, action) {
       newState[userId] = {
         ...state[userId],
         userId,
-        id: userId,
         type: STATES.DEFAULT,
         reply,
-        buttons: [BUTTONS.NEW],
+        buttons: [],
       };
       return newState;
     }
