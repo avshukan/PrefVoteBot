@@ -1,8 +1,8 @@
 const BUTTONS = {
-  DONE: '✔️ Done',
-  COMPLETE: '✔️ Complete',
-  CANCEL: '❌ Cancel',
-  RESULTS: '👁 Results',
+  DONE: '✔️ Сохранить',
+  COMPLETE: '✔️ Завершить опрос',
+  CANCEL: '❌ Отменить',
+  RESULTS: '👁 Показать результаты',
   NEW: '/new',
 };
 
