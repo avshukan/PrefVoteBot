@@ -366,6 +366,19 @@ function botHandlers(initStore, initStorage) {
       optionIndex,
     );
     switch (info) {
+      case BUTTONS.DONE:
+      case BUTTONS.COMPLETE:
+      case BUTTONS.RESULTS:
+      case BUTTONS.NEW:
+        break;
+      case BUTTONS.HINT: {
+        const reply = `Выбирайте варианты ответов, начиная с наиболее подходящего, пока не расставите все
+Кнопка "${BUTTONS.COMPLETE}" распределит оставшиеся варианты на последние места
+Кнопка "${BUTTONS.CANCEL}" прервёт опрос (вы можете вернуться к нему позднее)`;
+        context.answerCbQuery(reply);
+        context.reply(reply);
+        break;
+      }
       case BUTTONS.CANCEL: {
         store.dispatch({
           type: ACTIONS.HEARS_CANCEL,

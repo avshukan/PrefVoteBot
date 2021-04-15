@@ -96,7 +96,7 @@ function botReducer(state, action) {
         options,
       } = action.payload;
       const reply = `<b>${header}</b>\n${text}`;
-      const buttons = [...options.map((option) => option.Name), BUTTONS.CANCEL];
+      const buttons = [...options.map((option) => option.Name), BUTTONS.HINT, BUTTONS.CANCEL];
       newState[userId] = {
         ...state[userId],
         userId,
@@ -134,7 +134,7 @@ function botReducer(state, action) {
         optionsSelected.forEach((option, index) => {
           reply += `\n${index + 1}. ${option.Name}`;
         });
-        buttons = [...options.map((option) => option.Name), BUTTONS.CANCEL];
+        buttons = [...options.map((option) => option.Name), BUTTONS.HINT, BUTTONS.CANCEL];
         if (optionsSelected.length > 0) buttons.push(BUTTONS.COMPLETE);
       }
       newState[userId] = {
