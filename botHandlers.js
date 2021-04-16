@@ -368,8 +368,45 @@ function botHandlers(initStore, initStorage) {
     switch (info) {
       case BUTTONS.NEW:
       case BUTTONS.DONE:
-      case BUTTONS.RESULTS:
         break;
+      case BUTTONS.RESULTS: {
+        try {
+          const { header, text } = await storage.getQuestion(questionId);
+          const { votersCount } = await storage.getVotersCount(questionId);
+          const optrows = await storage.getOptions(questionId);
+          const rows = await storage.getRanks(questionId);
+          const optionsList = optrows.map((item) => item.Id);
+          const optionsRating = method(optionsList, rows);
+          const optionsResult = optionsRating
+            .sort((item1, item2) => item1.place - item2.place)
+            .map((item) => {
+              const position = (item.count === 1)
+                ? (item.place + 1)
+                : `${item.place + 1}-${item.place + item.count}`;
+              const name = optrows.filter((row) => row.Id === item.id)[0].Name;
+              return `${position}. ${name}`;
+            });
+          const result = optionsResult.reduce((acc, option) => `${acc}\n${option}`, `Опрос <b>${header}</b>\n`
+        + `${text}\n\n`
+        + `Приняли участие (человек): ${votersCount}\n`
+        + 'Результат:');
+          store.dispatch({
+            type: ACTIONS.HEARS_RESULTS,
+            payload: { userId, questionId, result },
+          });
+          const { reply, buttons } = store.getUserState(userId);
+          context.editMessageText(reply, getInlineReply(buttons));
+        } catch (error) {
+          console.error(error);
+          store.dispatch({
+            type: ACTIONS.ERROR,
+            payload: { userId },
+          });
+          const { reply, buttons } = store.getUserState(userId);
+          context.reply(reply, getExtraReply(buttons));
+        }
+        break;
+      }
       case BUTTONS.COMPLETE: {
         await storage.saveRanks({
           userId,
