@@ -354,7 +354,7 @@ function botHandlers(initStore, initStorage) {
     } = context.update.callback_query.from;
     const info = context.update.callback_query.data;
     const { questionId, options, optionsSelected } = store.getUserState(userId);
-    const optionIndex = options.findIndex((option) => option.Name === info);
+    const optionIndex = (options || []).findIndex((option) => option.Name === info);
     console.log(
       userId,
       userFirstName,
@@ -366,11 +366,35 @@ function botHandlers(initStore, initStorage) {
       optionIndex,
     );
     switch (info) {
-      case BUTTONS.DONE:
-      case BUTTONS.COMPLETE:
-      case BUTTONS.RESULTS:
       case BUTTONS.NEW:
+      case BUTTONS.DONE:
+      case BUTTONS.RESULTS:
         break;
+      case BUTTONS.COMPLETE: {
+        await storage.saveRanks({
+          userId,
+          optionsSelected,
+          options,
+          userFirstName,
+          userLastName,
+          userName,
+        });
+        await storage.saveStatus({
+          userId,
+          questionId,
+          status: 'ANSWERED',
+          userFirstName,
+          userLastName,
+          userName,
+        });
+        store.dispatch({
+          type: ACTIONS.HEARS_COMPLETE,
+          payload: { userId, options, optionsSelected },
+        });
+        const { reply, buttons } = store.getUserState(userId);
+        context.editMessageText(reply, getInlineReply(buttons));
+        break;
+      }
       case BUTTONS.HINT: {
         const reply = `Выбирайте варианты ответов, начиная с наиболее подходящего, пока не расставите все
 Кнопка "${BUTTONS.COMPLETE}" распределит оставшиеся варианты на последние места
