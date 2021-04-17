@@ -1,8 +1,10 @@
 const { ACTIONS } = require('./action_types');
 const { STATES } = require('./state_types');
 const { COMMANDS } = require('./command_types');
+const { BUTTONS } = require('./button_types');
 const { method } = require('./method');
 const getExtraReply = require('./getExtraReply');
+const getInlineReply = require('./getInlineReply');
 
 function botHandlers(initStore, initStorage) {
   const store = initStore;
@@ -342,6 +344,107 @@ function botHandlers(initStore, initStorage) {
     }
   }
 
+  async function actionHandler(context) {
+    console.log(context);
+    const {
+      id: userId,
+      first_name: userFirstName,
+      last_name: userLastName,
+      username: userName,
+    } = context.update.callback_query.from;
+    const info = context.update.callback_query.data;
+    const { questionId, options, optionsSelected } = store.getUserState(userId);
+    const optionIndex = (options || []).findIndex((option) => option.Name === info);
+    console.log(
+      userId,
+      userFirstName,
+      userLastName,
+      userName,
+      questionId,
+      options,
+      optionsSelected,
+      optionIndex,
+    );
+    switch (info) {
+      case BUTTONS.NEW:
+      case BUTTONS.DONE:
+      case BUTTONS.RESULTS:
+        break;
+      case BUTTONS.COMPLETE: {
+        await storage.saveRanks({
+          userId,
+          optionsSelected,
+          options,
+          userFirstName,
+          userLastName,
+          userName,
+        });
+        await storage.saveStatus({
+          userId,
+          questionId,
+          status: 'ANSWERED',
+          userFirstName,
+          userLastName,
+          userName,
+        });
+        store.dispatch({
+          type: ACTIONS.HEARS_COMPLETE,
+          payload: { userId, options, optionsSelected },
+        });
+        const { reply, buttons } = store.getUserState(userId);
+        context.editMessageText(reply, getInlineReply(buttons));
+        break;
+      }
+      case BUTTONS.HINT: {
+        const reply = `Выбирайте варианты ответов, начиная с наиболее подходящего, пока не расставите все
+Кнопка "${BUTTONS.COMPLETE}" распределит оставшиеся варианты на последние места
+Кнопка "${BUTTONS.CANCEL}" прервёт опрос (вы можете вернуться к нему позднее)`;
+        context.answerCbQuery(reply);
+        context.reply(reply);
+        break;
+      }
+      case BUTTONS.CANCEL: {
+        store.dispatch({
+          type: ACTIONS.HEARS_CANCEL,
+          payload: { userId, questionId },
+        });
+        const { reply, buttons } = store.getUserState(userId);
+        context.editMessageText(reply, getInlineReply(buttons));
+        break;
+      }
+      default: {
+        const selectedOption = options.splice(optionIndex, 1);
+        optionsSelected.push(...selectedOption);
+        if (options.length === 1) {
+          const lastOption = options.pop();
+          optionsSelected.push(lastOption);
+          await storage.saveRanks({
+            userId,
+            optionsSelected,
+            options,
+            userFirstName,
+            userLastName,
+            userName,
+          });
+          await storage.saveStatus({
+            userId,
+            questionId,
+            status: 'ANSWERED',
+            userFirstName,
+            userLastName,
+            userName,
+          });
+        }
+        store.dispatch({
+          type: ACTIONS.GET_OPTION,
+          payload: { userId, options, optionsSelected },
+        });
+        const { reply, buttons } = store.getUserState(userId);
+        context.editMessageText(reply, getInlineReply(buttons));
+      }
+    }
+  }
+
   function commandAboutHandler(context) {
     const userId = context.message.from.id;
     store.dispatch({
@@ -484,17 +587,18 @@ function botHandlers(initStore, initStorage) {
       },
     });
     const { reply, buttons } = store.getUserState(userId);
-    context
-      .reply(reply, getExtraReply(buttons))
-      .then((message) => {
-        store.dispatch({
-          type: ACTIONS.APPEND_MESSAGE_TO_QUEUE,
-          payload: { userId, messageId: message.message_id },
-        });
-      })
-      .catch((error) => {
-        console.error(error);
-      });
+    context.reply(reply, getInlineReply(buttons));
+    // context
+    // .reply(reply, getInlineReply(buttons))
+    // .then((message) => {
+    //   store.dispatch({
+    //     type: ACTIONS.APPEND_MESSAGE_TO_QUEUE,
+    //     payload: { userId, messageId: message.message_id },
+    //   });
+    // })
+    // .catch((error) => {
+    //   console.error(error);
+    // });
   }
 
   async function commandRandomHandler(context) {
@@ -528,6 +632,7 @@ function botHandlers(initStore, initStorage) {
 
   return {
     startHandler,
+    actionHandler,
     commandAboutHandler,
     commandCreatedByMeHandler,
     commandFindHandler,

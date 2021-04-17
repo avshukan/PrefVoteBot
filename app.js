@@ -27,6 +27,7 @@ if (TELEGRAM_TOKEN === undefined) {
 const bot = new Telegraf(TELEGRAM_TOKEN);
 bot.use(Telegraf.log());
 bot.start(handlers.startHandler);
+bot.action(/.+/, handlers.actionHandler);
 bot.command(COMMANDS.ABOUT, handlers.commandAboutHandler);
 bot.command(COMMANDS.CREATEDBYME, handlers.commandCreatedByMeHandler);
 bot.command(COMMANDS.FIND, handlers.commandFindHandler);
@@ -41,44 +42,6 @@ bot.hears(BUTTONS.COMPLETE, handlers.hearsCompleteHandler);
 bot.hears(BUTTONS.DONE, handlers.hearsDoneHandler);
 bot.hears(BUTTONS.RESULTS, handlers.hearsResultsHandler);
 bot.on('text', handlers.onTextHandler);
-// bot.on('text', store.dispatch({ type: 'NEW MESSAGE' }));
-
-// bot.command('inline', (ctx) => {
-//   return ctx.reply('<b>Coke</b> or <i>Pepsi?</i>', {
-//     parse_mode: 'HTML',
-//     ...Markup.inlineKeyboard([
-//       Markup.button.callback('Coke', 'Coke'),
-//       Markup.button.callback('Pepsi', 'Pepsi')
-//     ])
-//   })
-// })
-
-// bot.action('Dr Pepper', (ctx, next) => {
-//   return ctx.reply('👍').then(() => next())
-// })
-
-// bot.action('plain', async (ctx) => {
-//   await ctx.answerCbQuery()
-//   await ctx.editMessageCaption('Caption', Markup.inlineKeyboard([
-//     Markup.button.callback('Plain', 'plain'),
-//     Markup.button.callback('Italic', 'italic')
-//   ]))
-// })
-
-// bot.action('italic', async (ctx) => {
-//   await ctx.answerCbQuery()
-//   await ctx.editMessageCaption('_Caption_', {
-//     parse_mode: 'Markdown',
-//     ...Markup.inlineKeyboard([
-//       Markup.button.callback('Plain', 'plain'),
-//       Markup.button.callback('* Italic *', 'italic')
-//     ])
-//   })
-// })
-
-// bot.action(/.+/, (ctx) => {
-//   return ctx.answerCbQuery(`Oh, ${ctx.match[0]}! Great choice`)
-// })
 
 bot.launch();
 
