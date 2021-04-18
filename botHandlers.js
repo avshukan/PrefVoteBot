@@ -370,6 +370,10 @@ function botHandlers(initStore, initStorage) {
       case BUTTONS.DONE:
       case BUTTONS.RESULTS:
         break;
+      case BUTTONS.SKIP: {
+        context.answerCbQuery('Вы хотите пропустить опрос!');
+        break;
+      }
       case BUTTONS.COMPLETE: {
         await storage.saveRanks({
           userId,
