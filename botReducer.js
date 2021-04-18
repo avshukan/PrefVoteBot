@@ -181,6 +181,22 @@ function botReducer(state, action) {
       return newState;
     }
 
+    case ACTIONS.SKIP: {
+      const { userId, questionId } = action.payload;
+      const reply = 'Вы уверены, что хотите пропустить опрос и ознакомиться с результатами?\n'
+        + 'Увидев результаты, вы утратите возможность пройти опрос.\n';
+      return {
+        ...state,
+        [userId]: {
+          ...state[userId],
+          type: STATES.SKIP,
+          questionId,
+          reply,
+          buttons: [BUTTONS.SKIP_APPROVE, BUTTONS.SKIP_ABORT],
+        },
+      };
+    }
+
     case ACTIONS.HEARS_CANCEL: {
       const newState = { ...state };
       const { userId, questionId } = action.payload;
