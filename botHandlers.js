@@ -371,7 +371,12 @@ function botHandlers(initStore, initStorage) {
       case BUTTONS.RESULTS:
         break;
       case BUTTONS.SKIP: {
-        context.answerCbQuery('Вы хотите пропустить опрос!');
+        store.dispatch({
+          type: ACTIONS.SKIP,
+          payload: { userId, questionId },
+        });
+        const { reply, buttons } = store.getUserState(userId);
+        context.editMessageText(reply, getInlineReply(buttons));
         break;
       }
       case BUTTONS.COMPLETE: {
