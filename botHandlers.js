@@ -142,8 +142,7 @@ function botHandlers(initStore, initStorage) {
     }
   }
 
-  async function hearsResultsHandler(context) {
-    const userId = context.message.from.id;
+  async function hearsResultsHandler(context, userId) {
     try {
       const { questionId } = store.getUserState(userId);
       const { header, text } = await storage.getQuestion(questionId);
@@ -169,6 +168,35 @@ function botHandlers(initStore, initStorage) {
         type: ACTIONS.HEARS_RESULTS,
         payload: { userId, questionId, result },
       });
+    } catch (error) {
+      console.error(error);
+      store.dispatch({
+        type: ACTIONS.ERROR,
+        payload: { userId },
+      });
+      const { reply, buttons } = store.getUserState(userId);
+      context.reply(reply, getExtraReply(buttons));
+    }
+  }
+
+  function commandAboutHandler(context) {
+    const userId = context.message.from.id;
+    store.dispatch({
+      type: ACTIONS.SHOW_ABOUT,
+      payload: { userId },
+    });
+    const { reply, buttons } = store.getUserState(userId);
+    context.reply(reply, getExtraReply(buttons));
+  }
+
+  async function commandCreatedByMeHandler(context) {
+    const userId = context.message.from.id;
+    try {
+      const questions = await storage.getQuestionsCreatedByUser(userId);
+      store.dispatch({
+        type: ACTIONS.GET_QUESTIONS_LIST,
+        payload: { userId, questions, command: COMMANDS.CREATEDBYME },
+      });
       const { reply, buttons } = store.getUserState(userId);
       context.reply(reply, getExtraReply(buttons));
     } catch (error) {
@@ -180,6 +208,121 @@ function botHandlers(initStore, initStorage) {
       const { reply, buttons } = store.getUserState(userId);
       context.reply(reply, getExtraReply(buttons));
     }
+  }
+
+  async function commandVotedByMeHandler(context) {
+    const userId = context.message.from.id;
+    try {
+      const questions = await storage.getQuestionsVotedByUser(userId);
+      store.dispatch({
+        type: ACTIONS.GET_QUESTIONS_LIST,
+        payload: { userId, questions, command: COMMANDS.VOTEDBYME },
+      });
+      const { reply, buttons } = store.getUserState(userId);
+      context.reply(reply, getExtraReply(buttons));
+    } catch (error) {
+      console.error(error);
+      store.dispatch({
+        type: ACTIONS.ERROR,
+        payload: { userId },
+      });
+      const { reply, buttons } = store.getUserState(userId);
+      context.reply(reply, getExtraReply(buttons));
+    }
+  }
+
+  async function commandFindHandler(context) {
+    const { from: { id: userId }, text } = context.message;
+    try {
+      const textArray = text.match(/[A-Za-zА-Яа-яЁё0-9]+/gi);
+      const command = textArray.shift();
+      if (command !== 'find' || textArray.length === 0) throw new Error('Уточните строку поиска!');
+      const questions = await storage.getQuestionsWithText(textArray);
+      store.dispatch({
+        type: ACTIONS.GET_QUESTIONS_LIST,
+        payload: { userId, questions, command: COMMANDS.FIND },
+      });
+      const { reply, buttons } = store.getUserState(userId);
+      context.reply(reply, getExtraReply(buttons));
+    } catch (error) {
+      console.error(error);
+      store.dispatch({
+        type: ACTIONS.ERROR,
+        payload: { userId, error },
+      });
+      const { reply, buttons } = store.getUserState(userId);
+      context.reply(reply, getExtraReply(buttons));
+    }
+  }
+
+  function commandHelpHandler(context) {
+    const userId = context.message.from.id;
+    store.dispatch({
+      type: ACTIONS.MOCK,
+      payload: { userId },
+    });
+    const { reply, buttons } = store.getUserState(userId);
+    context.reply(reply, getExtraReply(buttons));
+  }
+
+  async function commandPopularHandler(context) {
+    const userId = context.message.from.id;
+    try {
+      const questions = await storage.getQuestionsPopular();
+      store.dispatch({
+        type: ACTIONS.GET_QUESTIONS_LIST,
+        payload: { userId, questions, command: COMMANDS.POPULAR },
+      });
+      const { reply, buttons } = store.getUserState(userId);
+      context.reply(reply, getExtraReply(buttons));
+    } catch (error) {
+      console.error(error);
+      store.dispatch({
+        type: ACTIONS.ERROR,
+        payload: { userId },
+      });
+      const { reply, buttons } = store.getUserState(userId);
+      context.reply(reply, getExtraReply(buttons));
+    }
+  }
+
+  function commandSettingsHandler(context) {
+    const userId = context.message.from.id;
+    store.dispatch({
+      type: ACTIONS.MOCK,
+      payload: { userId },
+    });
+    const { reply, buttons } = store.getUserState(userId);
+    context.reply(reply, getExtraReply(buttons));
+  }
+
+  async function launchQuestion(context, userId, questionId) {
+    const status = await storage.getQuestionStatus(questionId, userId);
+    if (status === 'ANSWERED' || status === 'SKIPPED') {
+      store.dispatch({
+        type: ACTIONS.HEARS_RESULTS,
+        payload: { userId, questionId },
+      });
+      await hearsResultsHandler(context, userId);
+      const { reply, buttons } = store.getUserState(userId);
+      context.reply(reply, getExtraReply(buttons));
+      return;
+    }
+    // NOT ANSWERED
+    const questionWithOptions = await storage.getQuestionWithOptions(questionId);
+    const { header, text, options } = questionWithOptions;
+    store.dispatch({
+      type: ACTIONS.CAST_VOTE,
+      payload: {
+        userId,
+        questionId,
+        header,
+        text,
+        options,
+      },
+    });
+    const { reply, buttons } = store.getUserState(userId);
+    context.reply(reply, getInlineReply(buttons));
   }
 
   async function onTextHandler(context) {
@@ -370,6 +513,37 @@ function botHandlers(initStore, initStorage) {
       case BUTTONS.DONE:
       case BUTTONS.RESULTS:
         break;
+      case BUTTONS.SKIP: {
+        store.dispatch({
+          type: ACTIONS.SKIP,
+          payload: { userId, questionId },
+        });
+        const { reply, buttons } = store.getUserState(userId);
+        context.editMessageText(reply, getInlineReply(buttons));
+        break;
+      }
+      case BUTTONS.SKIP_ABORT: {
+        await launchQuestion(context, userId, questionId);
+        break;
+      }
+      case BUTTONS.SKIP_APPROVE: {
+        await storage.saveStatus({
+          userId,
+          questionId,
+          status: 'SKIPPED',
+          userFirstName,
+          userLastName,
+          userName,
+        });
+        store.dispatch({
+          type: ACTIONS.HEARS_RESULTS,
+          payload: { userId, questionId },
+        });
+        await hearsResultsHandler(context, userId);
+        const { reply, buttons } = store.getUserState(userId);
+        context.editMessageText(reply, getInlineReply(buttons));
+        break;
+      }
       case BUTTONS.COMPLETE: {
         await storage.saveRanks({
           userId,
@@ -445,165 +619,10 @@ function botHandlers(initStore, initStorage) {
     }
   }
 
-  function commandAboutHandler(context) {
-    const userId = context.message.from.id;
-    store.dispatch({
-      type: ACTIONS.SHOW_ABOUT,
-      payload: { userId },
-    });
-    const { reply, buttons } = store.getUserState(userId);
-    context.reply(reply, getExtraReply(buttons));
-  }
-
-  async function commandCreatedByMeHandler(context) {
-    const userId = context.message.from.id;
-    try {
-      const questions = await storage.getQuestionsCreatedByUser(userId);
-      store.dispatch({
-        type: ACTIONS.GET_QUESTIONS_LIST,
-        payload: { userId, questions, command: COMMANDS.CREATEDBYME },
-      });
-      const { reply, buttons } = store.getUserState(userId);
-      context.reply(reply, getExtraReply(buttons));
-    } catch (error) {
-      console.error(error);
-      store.dispatch({
-        type: ACTIONS.ERROR,
-        payload: { userId },
-      });
-      const { reply, buttons } = store.getUserState(userId);
-      context.reply(reply, getExtraReply(buttons));
-    }
-  }
-
-  async function commandVotedByMeHandler(context) {
-    const userId = context.message.from.id;
-    try {
-      const questions = await storage.getQuestionsVotedByUser(userId);
-      store.dispatch({
-        type: ACTIONS.GET_QUESTIONS_LIST,
-        payload: { userId, questions, command: COMMANDS.VOTEDBYME },
-      });
-      const { reply, buttons } = store.getUserState(userId);
-      context.reply(reply, getExtraReply(buttons));
-    } catch (error) {
-      console.error(error);
-      store.dispatch({
-        type: ACTIONS.ERROR,
-        payload: { userId },
-      });
-      const { reply, buttons } = store.getUserState(userId);
-      context.reply(reply, getExtraReply(buttons));
-    }
-  }
-
-  async function commandFindHandler(context) {
-    const { from: { id: userId }, text } = context.message;
-    try {
-      const textArray = text.match(/[A-Za-zА-Яа-яЁё0-9]+/gi);
-      const command = textArray.shift();
-      if (command !== 'find' || textArray.length === 0) throw new Error('Уточните строку поиска!');
-      const questions = await storage.getQuestionsWithText(textArray);
-      store.dispatch({
-        type: ACTIONS.GET_QUESTIONS_LIST,
-        payload: { userId, questions, command: COMMANDS.FIND },
-      });
-      const { reply, buttons } = store.getUserState(userId);
-      context.reply(reply, getExtraReply(buttons));
-    } catch (error) {
-      console.error(error);
-      store.dispatch({
-        type: ACTIONS.ERROR,
-        payload: { userId, error },
-      });
-      const { reply, buttons } = store.getUserState(userId);
-      context.reply(reply, getExtraReply(buttons));
-    }
-  }
-
-  function commandHelpHandler(context) {
-    const userId = context.message.from.id;
-    store.dispatch({
-      type: ACTIONS.MOCK,
-      payload: { userId },
-    });
-    const { reply, buttons } = store.getUserState(userId);
-    context.reply(reply, getExtraReply(buttons));
-  }
-
-  async function commandPopularHandler(context) {
-    const userId = context.message.from.id;
-    try {
-      const questions = await storage.getQuestionsPopular();
-      store.dispatch({
-        type: ACTIONS.GET_QUESTIONS_LIST,
-        payload: { userId, questions, command: COMMANDS.POPULAR },
-      });
-      const { reply, buttons } = store.getUserState(userId);
-      context.reply(reply, getExtraReply(buttons));
-    } catch (error) {
-      console.error(error);
-      store.dispatch({
-        type: ACTIONS.ERROR,
-        payload: { userId },
-      });
-      const { reply, buttons } = store.getUserState(userId);
-      context.reply(reply, getExtraReply(buttons));
-    }
-  }
-
-  function commandSettingsHandler(context) {
-    const userId = context.message.from.id;
-    store.dispatch({
-      type: ACTIONS.MOCK,
-      payload: { userId },
-    });
-    const { reply, buttons } = store.getUserState(userId);
-    context.reply(reply, getExtraReply(buttons));
-  }
-
-  async function launchQuestion(context, questionId) {
-    const userId = context.message.from.id;
-    const status = await storage.getQuestionStatus(questionId, userId);
-    if (status === 'ANSWERED') {
-      store.dispatch({
-        type: ACTIONS.HEARS_RESULTS,
-        payload: { userId, questionId },
-      });
-      hearsResultsHandler(context);
-      return;
-    }
-    // NOT ANSWERED
-    const questionWithOptions = await storage.getQuestionWithOptions(questionId);
-    const { header, text, options } = questionWithOptions;
-    store.dispatch({
-      type: ACTIONS.CAST_VOTE,
-      payload: {
-        userId,
-        questionId,
-        header,
-        text,
-        options,
-      },
-    });
-    const { reply, buttons } = store.getUserState(userId);
-    context.reply(reply, getInlineReply(buttons));
-    // context
-    // .reply(reply, getInlineReply(buttons))
-    // .then((message) => {
-    //   store.dispatch({
-    //     type: ACTIONS.APPEND_MESSAGE_TO_QUEUE,
-    //     payload: { userId, messageId: message.message_id },
-    //   });
-    // })
-    // .catch((error) => {
-    //   console.error(error);
-    // });
-  }
-
   async function commandRandomHandler(context) {
+    const userId = context.message.from.id;
     const questionId = await storage.getQuestionsRandom();
-    await launchQuestion(context, questionId);
+    await launchQuestion(context, userId, questionId);
   }
 
   async function startHandler(context) {
@@ -618,7 +637,7 @@ function botHandlers(initStore, initStorage) {
     }
     try {
       const questionId = parseInt(context.startPayload, 10);
-      await launchQuestion(context, questionId);
+      await launchQuestion(context, userId, questionId);
     } catch (error) {
       console.error(error);
       store.dispatch({

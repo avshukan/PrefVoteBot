@@ -96,7 +96,12 @@ function botReducer(state, action) {
         options,
       } = action.payload;
       const reply = `<b>${header}</b>\n${text}`;
-      const buttons = [...options.map((option) => option.Name), BUTTONS.HINT, BUTTONS.CANCEL];
+      const buttons = [
+        ...options.map((option) => option.Name),
+        BUTTONS.HINT,
+        BUTTONS.CANCEL,
+        BUTTONS.SKIP,
+      ];
       newState[userId] = {
         ...state[userId],
         userId,
@@ -136,6 +141,7 @@ function botReducer(state, action) {
         });
         buttons = [...options.map((option) => option.Name), BUTTONS.HINT, BUTTONS.CANCEL];
         if (optionsSelected.length > 0) buttons.push(BUTTONS.COMPLETE);
+        buttons.push(BUTTONS.SKIP);
       }
       newState[userId] = {
         ...state[userId],
@@ -173,6 +179,22 @@ function botReducer(state, action) {
         buttons,
       };
       return newState;
+    }
+
+    case ACTIONS.SKIP: {
+      const { userId, questionId } = action.payload;
+      const reply = 'Вы уверены, что хотите пропустить опрос и ознакомиться с результатами?\n'
+        + 'Увидев результаты, вы утратите возможность пройти опрос.\n';
+      return {
+        ...state,
+        [userId]: {
+          ...state[userId],
+          type: STATES.SKIP,
+          questionId,
+          reply,
+          buttons: [BUTTONS.SKIP_APPROVE, BUTTONS.SKIP_ABORT],
+        },
+      };
     }
 
     case ACTIONS.HEARS_CANCEL: {
