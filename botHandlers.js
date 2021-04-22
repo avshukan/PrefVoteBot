@@ -305,7 +305,7 @@ function botHandlers(initStore, initStorage) {
       });
       await hearsResultsHandler(context, userId);
       const { reply, buttons } = store.getUserState(userId);
-      context.reply(reply, getExtraReply(buttons));
+      context.reply(reply, getInlineReply(buttons));
       return;
     }
     // NOT ANSWERED
@@ -511,7 +511,10 @@ function botHandlers(initStore, initStorage) {
     switch (info) {
       case BUTTONS.NEW:
       case BUTTONS.DONE:
+      case BUTTONS.RESULTS_MINE: {
+        context.answerCbQuery();
         break;
+      }
       case BUTTONS.SKIP: {
         store.dispatch({
           type: ACTIONS.SKIP,
