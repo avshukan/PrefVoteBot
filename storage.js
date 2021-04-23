@@ -37,6 +37,25 @@ function createDBStorage() {
     }
   }
 
+  async function getAnswersByUser(questionId, userId) {
+    try {
+      const sql = `
+        SELECT pq.Header, pq.Text, pr.Rank, po.Name
+        FROM prefvotebot_ranks pr
+        INNER JOIN prefvotebot_questions pq
+        ON pr.QuestionId = pq.Id
+        INNER JOIN prefvotebot_options po
+        ON pr.QuestionId = po.QuestionId AND pr.OptionId = po.Id
+        WHERE pr.QuestionId = ? AND pr.User = ?
+      `;
+      const data = [questionId, userId];
+      const [answers] = await storagePool.execute(sql, data);
+      return answers;
+    } catch (e) {
+      return e;
+    }
+  }
+
   async function getQuestionsCreatedByUser(userId) {
     try {
       const sql = `
@@ -305,6 +324,7 @@ function createDBStorage() {
 
   return {
     getQuestion,
+    getAnswersByUser,
     getQuestionsCreatedByUser,
     getQuestionsVotedByUser,
     getQuestionsWithText,

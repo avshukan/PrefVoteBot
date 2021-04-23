@@ -305,7 +305,7 @@ function botHandlers(initStore, initStorage) {
       });
       await hearsResultsHandler(context, userId);
       const { reply, buttons } = store.getUserState(userId);
-      context.reply(reply, getExtraReply(buttons));
+      context.reply(reply, getInlineReply(buttons));
       return;
     }
     // NOT ANSWERED
@@ -511,7 +511,36 @@ function botHandlers(initStore, initStorage) {
     switch (info) {
       case BUTTONS.NEW:
       case BUTTONS.DONE:
+      case BUTTONS.RESULTS_MINE: {
+        context.answerCbQuery();
+        const rows = await storage.getAnswersByUser(questionId, userId);
+        if (!rows || rows.length === 0) {
+          const reply = 'Нет информации о ваших ответах';
+          context.reply(reply, []);
+          break;
+        }
+        const header = rows[0].Header;
+        const text = rows[0].Text;
+        const ranks = rows.reduce((acc, item) => {
+          if (!acc[item.Rank]) {
+            acc[item.Rank] = 0;
+          }
+          acc[item.Rank] += 1;
+          return acc;
+        }, {});
+        const answers = rows.map((item) => {
+          const rank = (ranks[item.Rank] === 1)
+            ? item.Rank
+            : `${item.Rank}-${item.Rank + ranks[item.Rank] - 1}`;
+          return { rank, name: item.Name };
+        });
+        const reply = answers.reduce((acc, option) => `${acc}\n${option.rank}. ${option.name}`,
+          `Опрос <b>${header}</b>\n`
+          + `${text}\n\n`
+          + 'Ваши ответы:');
+        context.reply(reply, getInlineReply([]));
         break;
+      }
       case BUTTONS.SKIP: {
         store.dispatch({
           type: ACTIONS.SKIP,

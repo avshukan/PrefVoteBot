@@ -285,7 +285,7 @@ function botReducer(state, action) {
         type: STATES.DEFAULT,
         questionId,
         reply: result,
-        buttons: [],
+        buttons: [BUTTONS.RESULTS_MINE],
       };
       return newState;
     }
