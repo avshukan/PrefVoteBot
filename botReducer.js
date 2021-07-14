@@ -15,7 +15,11 @@ function botReducer(state, action) {
       newState[userId] = {
         ...state[userId],
         userId,
-        id: userId,
+        // id: userId,
+      };
+      const questionState = (state[userId] === undefined) ? {} : { ...state[userId][0] };
+      newState[userId][0] = {
+        ...questionState,
         type: STATES.CREATE_HEADER,
         reply: 'Отправьте заголовок опроса',
         buttons: [BUTTONS.CANCEL],
@@ -33,11 +37,15 @@ function botReducer(state, action) {
       newState[userId] = {
         ...state[userId],
         userId,
-        id: userId,
+        // id: userId,
+        clearMessagesQueue: [...(state[userId].clearMessagesQueue || []), userMessageId],
+      };
+      const questionState = (state[userId] === undefined) ? {} : { ...state[userId][0] };
+      newState[userId][0] = {
+        ...questionState,
         type: STATES.CREATE_TEXT,
         questionId,
         header,
-        clearMessagesQueue: [...(state[userId].clearMessagesQueue || []), userMessageId],
         reply,
         buttons: [BUTTONS.CANCEL],
       };
