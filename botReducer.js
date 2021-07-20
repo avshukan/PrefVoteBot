@@ -8,13 +8,14 @@ const MOCK_MESSAGE = 'Данный функционал находится в р
 const ERROR_MESSAGE = 'Извините, произошла ошибка. Что-то пошло не так...';
 
 function botReducer(state, action) {
+  const newState = { ...state };
+
   switch (action.type) {
     case ACTIONS.CREATE_VOTE: {
       const { userId } = action.payload;
-      const newState = { ...state };
       newState[userId] = {
         ...state[userId],
-        userId,
+        // userId,
         // id: userId,
       };
       const questionState = (state[userId] === undefined) ? {} : { ...state[userId][0] };
@@ -28,7 +29,6 @@ function botReducer(state, action) {
     }
 
     case ACTIONS.CREATE_HEADER: {
-      const newState = { ...state };
       const {
         userId, questionId, header, userMessageId,
       } = action.payload;
@@ -36,7 +36,7 @@ function botReducer(state, action) {
         + 'Отправьте текст вопроса';
       newState[userId] = {
         ...state[userId],
-        userId,
+        // userId,
         // id: userId,
         clearMessagesQueue: [...(state[userId].clearMessagesQueue || []), userMessageId],
       };
@@ -53,19 +53,22 @@ function botReducer(state, action) {
     }
 
     case ACTIONS.CREATE_TEXT: {
-      const newState = { ...state };
       const { userId, text, userMessageId } = action.payload;
       const reply = `Заголовок: <b>${state[userId].header}</b>\n`
         + `Вопрос: ${text}\n\n`
         + 'Отправьте вариант ответа';
       newState[userId] = {
         ...state[userId],
-        userId,
-        id: userId,
+        // userId,
+        // id: userId,
+        clearMessagesQueue: [...(state[userId].clearMessagesQueue || []), userMessageId],
+      };
+      const questionState = (state[userId] === undefined) ? {} : { ...state[userId][0] };
+      newState[userId][0] = {
+        ...questionState,
         type: STATES.CREATE_OPTION,
         text,
         options: [],
-        clearMessagesQueue: [...(state[userId].clearMessagesQueue || []), userMessageId],
         reply,
         buttons: [BUTTONS.CANCEL],
       };
@@ -73,7 +76,6 @@ function botReducer(state, action) {
     }
 
     case ACTIONS.CREATE_OPTION: {
-      const newState = { ...state };
       const { userId, option, userMessageId } = action.payload;
       const options = [...(state[userId].options || []), option];
       const defaultReply = `Заголовок: <b>${state[userId].header}</b>\n`
@@ -83,11 +85,15 @@ function botReducer(state, action) {
       const buttons = (options.length > 1) ? [BUTTONS.DONE, BUTTONS.CANCEL] : [BUTTONS.CANCEL];
       newState[userId] = {
         ...state[userId],
-        userId,
-        id: userId,
+        // userId,
+        // id: userId,
+        clearMessagesQueue: [...(state[userId].clearMessagesQueue || []), userMessageId],
+      };
+      const questionState = (state[userId] === undefined) ? {} : { ...state[userId][0] };
+      newState[userId][0] = {
+        ...questionState,
         type: STATES.CREATE_OPTION,
         options,
-        clearMessagesQueue: [...(state[userId].clearMessagesQueue || []), userMessageId],
         reply: `${reply}\n\nОтправьте вариант ответа`,
         buttons,
       };
@@ -95,7 +101,6 @@ function botReducer(state, action) {
     }
 
     case ACTIONS.CAST_VOTE: {
-      const newState = { ...state };
       const {
         userId,
         questionId,
@@ -110,12 +115,11 @@ function botReducer(state, action) {
         BUTTONS.CANCEL,
         BUTTONS.SKIP,
       ];
-      newState[userId] = {
-        ...state[userId],
-        userId,
-        id: userId,
+      newState[userId] = {...state[userId]};
+      const questionState = (state[userId] === undefined) ? {} : { ...state[userId][questionId] };
+      newState[userId][questionId] = {
+        ...questionState,
         type: STATES.ANSWER,
-        questionId,
         header,
         text,
         options,
@@ -127,9 +131,9 @@ function botReducer(state, action) {
     }
 
     case ACTIONS.GET_OPTION: {
-      const newState = { ...state };
       const {
         userId,
+        // questionId, ???!!!
         options,
         optionsSelected,
       } = action.payload;
@@ -151,10 +155,10 @@ function botReducer(state, action) {
         if (optionsSelected.length > 0) buttons.push(BUTTONS.COMPLETE);
         buttons.push(BUTTONS.SKIP);
       }
-      newState[userId] = {
-        ...state[userId],
-        userId,
-        id: userId,
+      newState[userId] = {...state[userId]};
+      const questionState = (state[userId] === undefined) ? {} : { ...state[userId][questionId] };
+      newState[userId][questionId] = {
+        ...questionState,
         type: STATES.ANSWER,
         options,
         optionsSelected,
@@ -165,11 +169,12 @@ function botReducer(state, action) {
     }
 
     case ACTIONS.GET_WRONG_OPTION: {
-      const newState = { ...state };
+      // questionId]; ?!
       const { userId, answer } = action.payload;
       const {
         header, text, options, optionsSelected,
       } = state[userId];
+    // } = state[userId][questionId]; ?!
       const isOptionFound = optionsSelected.findIndex((item) => item.Name === answer) === -1;
       const errorExplaination = isOptionFound
         ? `значения "<b>${answer}</b>" нет в списке вариантов`
@@ -179,9 +184,10 @@ function botReducer(state, action) {
         + `${text}${optionsSelected.length === 0 ? '' : '\nВы уже выбрали:'}`;
       const reply = optionsSelected.reduce((acc, selectedOption, index) => `${acc}\n${index + 1}. ${selectedOption.Name}`, defaultReply);
       const buttons = [...options.map((option) => option.Name), BUTTONS.CANCEL];
-      newState[userId] = {
-        ...state[userId],
-        userId,
+      newState[userId] = {...state[userId]};
+      const questionState = (state[userId] === undefined) ? {} : { ...state[userId][questionId] };
+      newState[userId][questionId] = {
+        ...questionState,
         type: STATES.ANSWER,
         reply,
         buttons,
@@ -193,20 +199,18 @@ function botReducer(state, action) {
       const { userId, questionId } = action.payload;
       const reply = 'Вы уверены, что хотите пропустить опрос и ознакомиться с результатами?\n'
         + 'Увидев результаты, вы утратите возможность пройти опрос.\n';
-      return {
-        ...state,
-        [userId]: {
-          ...state[userId],
-          type: STATES.SKIP,
-          questionId,
-          reply,
-          buttons: [BUTTONS.SKIP_APPROVE, BUTTONS.SKIP_ABORT],
-        },
+      newState[userId] = {...state[userId]};
+      const questionState = (state[userId] === undefined) ? {} : { ...state[userId][questionId] };
+      newState[userId][questionId] = {
+        ...questionState,
+        type: STATES.SKIP,
+        reply,
+        buttons: [BUTTONS.SKIP_APPROVE, BUTTONS.SKIP_ABORT],
       };
+      return newState;
     }
 
     case ACTIONS.HEARS_CANCEL: {
-      const newState = { ...state };
       const { userId, questionId } = action.payload;
       let reply;
       switch (state[userId] && state[userId].type) {
@@ -221,9 +225,10 @@ function botReducer(state, action) {
         default:
           reply = 'Действие отменено';
       }
-      newState[userId] = {
-        ...state[userId],
-        userId,
+      newState[userId] = {...state[userId]};
+      const questionState = (state[userId] === undefined) ? {} : { ...state[userId][questionId] };
+      newState[userId][questionId] = {
+        ...questionState,
         type: STATES.DEFAULT,
         reply,
         buttons: [],
@@ -232,9 +237,9 @@ function botReducer(state, action) {
     }
 
     case ACTIONS.HEARS_COMPLETE: {
-      const newState = { ...state };
       const {
         userId,
+        questionId,
         options,
         optionsSelected,
       } = action.payload;
@@ -249,8 +254,10 @@ function botReducer(state, action) {
         reply += `\n${counterFrom}-${counterTo}. ${option.Name}`;
       });
       const buttons = [BUTTONS.RESULTS];
-      newState[userId] = {
-        ...state[userId],
+      newState[userId] = {...state[userId]};
+      const questionState = (state[userId] === undefined) ? {} : { ...state[userId][questionId] };
+      newState[userId][questionId] = {
+        ...questionState,
         type: STATES.DEFAULT,
         options,
         optionsSelected,
@@ -261,17 +268,16 @@ function botReducer(state, action) {
     }
 
     case ACTIONS.HEARS_DONE: {
-      const newState = { ...state };
       const {
         userId, questionId, header, text, options,
       } = action.payload;
       const reply = `Опрос <b>${header}</b> сформирован!\n`
         + 'Принять участие можно по ссылке\n'
         + `${DEEPLINK_TOKEN}start=${questionId}`;
-      newState[userId] = {
-        ...state[userId],
-        userId,
-        id: userId,
+      newState[userId] = {...state[userId]};
+      const questionState = (state[userId] === undefined) ? {} : { ...state[userId][questionId] };
+      newState[userId][questionId] = {
+        ...questionState,
         type: STATES.DEFAULT,
         questionId,
         header,
@@ -284,14 +290,12 @@ function botReducer(state, action) {
     }
 
     case ACTIONS.HEARS_RESULTS: {
-      const newState = { ...state };
       const { userId, questionId, result } = action.payload;
-      newState[userId] = {
-        ...state[userId],
-        userId,
-        id: userId,
+      newState[userId] = {...state[userId]};
+      const questionState = (state[userId] === undefined) ? {} : { ...state[userId][questionId] };
+      newState[userId][questionId] = {
+        ...questionState,
         type: STATES.DEFAULT,
-        questionId,
         reply: result,
         buttons: [BUTTONS.RESULTS_MINE],
       };
@@ -299,7 +303,6 @@ function botReducer(state, action) {
     }
 
     case ACTIONS.APPEND_MESSAGE_TO_QUEUE: {
-      const newState = { ...state };
       const { userId, messageId } = action.payload;
       newState[userId] = {
         ...state[userId],
@@ -309,7 +312,6 @@ function botReducer(state, action) {
     }
 
     case ACTIONS.REMOVE_MESSAGE_FROM_QUEUE: {
-      const newState = { ...state };
       const { userId } = action.payload;
       newState[userId] = {
         ...state[userId],
@@ -319,10 +321,12 @@ function botReducer(state, action) {
     }
 
     case ACTIONS.SHOW_ABOUT: {
-      const newState = { ...state };
       const { userId } = action.payload;
-      newState[userId] = {
-        ...state[userId],
+      const questionId = 0;
+      newState[userId] = {...state[userId]};
+      const questionState = (state[userId] === undefined) ? {} : { ...state[userId][questionId] };
+      newState[userId][questionId] = {
+        ...questionState,
         type: STATES.DEFAULT,
         reply:
           'В преференциальной системе участник голосования выбирает не один вариант ответа, а расставляет их в порядке приоритета, сначала начиная с наиболее предпочтительного варианта.\n'
@@ -336,6 +340,7 @@ function botReducer(state, action) {
 
     case ACTIONS.GET_QUESTIONS_LIST: {
       const { userId, questions = [], command } = action.payload;
+      const questionId = 0;
       let replyHeader;
       switch (command) {
         case COMMANDS.CREATEDBYME:
@@ -361,22 +366,22 @@ function botReducer(state, action) {
         + `${item.text}\n`}${item.voters ? `Количество участников: ${item.voters}\n` : ''
         }${DEEPLINK_TOKEN}start=${item.id}`
         : acc), replyHeader);
-      return {
-        ...state,
-        [userId]: {
-          ...state[userId],
-          type: STATES.DEFAULT,
-          reply,
-          buttons: [],
-        },
+      newState[userId] = {...state[userId]};
+      const questionState = (state[userId] === undefined) ? {} : { ...state[userId][questionId] };
+      newState[userId][questionId] = {
+        ...questionState,
+        type: STATES.DEFAULT,
+        reply,
+        buttons: [],
       };
     }
 
     case ACTIONS.ERROR: {
-      const newState = { ...state };
-      const { userId, error } = action.payload;
-      newState[userId] = {
-        ...state[userId],
+      const { userId, questionId, error } = action.payload;
+      newState[userId] = {...state[userId]};
+      const questionState = (state[userId] === undefined) ? {} : { ...state[userId][questionId] };
+      newState[userId][questionId] = {
+        ...questionState,
         type: STATES.DEFAULT,
         reply: (error && error.message) || ERROR_MESSAGE,
         buttons: [BUTTONS.NEW],
@@ -385,10 +390,11 @@ function botReducer(state, action) {
     }
 
     case ACTIONS.MOCK: {
-      const newState = { ...state };
-      const { userId } = action.payload;
-      newState[userId] = {
-        ...state[userId],
+      const { userId, questionId } = action.payload;
+      newState[userId] = {...state[userId]};
+      const questionState = (state[userId] === undefined) ? {} : { ...state[userId][questionId] };
+      newState[userId][questionId] = {
+        ...questionState,
         type: STATES.DEFAULT,
         reply: MOCK_MESSAGE,
         buttons: [BUTTONS.NEW],
@@ -397,7 +403,7 @@ function botReducer(state, action) {
     }
 
     default:
-      return state;
+      return newState;
   }
 }
 
