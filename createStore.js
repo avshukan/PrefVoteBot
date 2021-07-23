@@ -18,14 +18,27 @@ function createStore(storeReducer, storeState = {}) {
     if (!state[userId]) {
       return {
         // userId,
-        type: STATES.DEFAULT,
+        // type: STATES.DEFAULT,
         clearMessagesQueue: [],
       };
     }
     return state[userId];
   }
 
-  return { dispatch, getState, getUserState };
+  function getQuestionState(userId, questionId = 0) {
+    const userState = getUserState(userId);
+    if (!userState[questionId]) {
+      return {};
+    }
+    return userState[questionId];
+  }
+
+  return {
+    dispatch,
+    getState,
+    getUserState,
+    getQuestionState,
+  };
 }
 
 module.exports = createStore;

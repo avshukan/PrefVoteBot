@@ -6,7 +6,7 @@ const COLUMNS = 3;
 function getInlineReply(buttons) {
   if (!Array.isArray(buttons) || buttons.length === 0) return { parse_mode: 'HTML' };
   const inlineReply = Markup.inlineKeyboard(
-    buttons.map((button) => Markup.button.callback(button, button)),
+    buttons.map((button) => Markup.button.callback(button, JSON.stringify({questionId: 13, button}))),
     {
       // wrap: (btn, index, currentRow) => (buttons[index] === BUTTONS.HINT) || !(index % COLUMNS),
       wrap: (btn, index) => (buttons[index] === BUTTONS.HINT) || !(index % COLUMNS),

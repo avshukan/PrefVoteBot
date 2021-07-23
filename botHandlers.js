@@ -22,11 +22,12 @@ function botHandlers(initStore, initStorage) {
 
   function commandNewHandler(context) {
     const userId = context.message.from.id;
+    const questionId = 0;
     store.dispatch({
       type: ACTIONS.CREATE_VOTE,
       payload: { userId },
     });
-    const { reply, buttons } = store.getUserState(userId);
+    const { reply, buttons } = store.getQuestionState(userId, questionId);
     context
       .reply(reply, getExtraReply(buttons))
       .then((message) => {
@@ -142,9 +143,9 @@ function botHandlers(initStore, initStorage) {
     }
   }
 
-  async function hearsResultsHandler(context, userId) {
+  async function hearsResultsHandler(context, userId, questionId) {
     try {
-      const { questionId } = store.getUserState(userId);
+      // const { questionId } = store.getUserState(userId);
       const { header, text } = await storage.getQuestion(questionId);
       const { votersCount } = await storage.getVotersCount(questionId);
       const optrows = await storage.getOptions(questionId);
@@ -174,7 +175,8 @@ function botHandlers(initStore, initStorage) {
         type: ACTIONS.ERROR,
         payload: { userId },
       });
-      const { reply, buttons } = store.getUserState(userId);
+      // const { reply, buttons } = store.getUserState(userId);
+      const { reply, buttons } = store.getQuestionState(userId, questionId);
       context.reply(reply, getExtraReply(buttons));
     }
   }
@@ -303,7 +305,7 @@ function botHandlers(initStore, initStorage) {
         type: ACTIONS.HEARS_RESULTS,
         payload: { userId, questionId },
       });
-      await hearsResultsHandler(context, userId);
+      await hearsResultsHandler(context, userId, questionId);
       const { reply, buttons } = store.getUserState(userId);
       context.reply(reply, getInlineReply(buttons));
       return;
@@ -567,7 +569,7 @@ function botHandlers(initStore, initStorage) {
           type: ACTIONS.HEARS_RESULTS,
           payload: { userId, questionId },
         });
-        await hearsResultsHandler(context, userId);
+        await hearsResultsHandler(context, userId, questionId);
         const { reply, buttons } = store.getUserState(userId);
         context.editMessageText(reply, getInlineReply(buttons));
         break;

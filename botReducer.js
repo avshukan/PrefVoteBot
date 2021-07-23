@@ -290,6 +290,7 @@ function botReducer(state, action) {
     }
 
     case ACTIONS.HEARS_RESULTS: {
+      // console.log('action.payload', action.payload);
       const { userId, questionId, result } = action.payload;
       newState[userId] = {...state[userId]};
       const questionState = (state[userId] === undefined) ? {} : { ...state[userId][questionId] };
@@ -299,6 +300,8 @@ function botReducer(state, action) {
         reply: result,
         buttons: [BUTTONS.RESULTS_MINE],
       };
+      // console.log('newState[userId][questionId]', newState[userId][questionId]);
+      // console.log('newState', newState);
       return newState;
     }
 
