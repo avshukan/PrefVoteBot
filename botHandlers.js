@@ -336,7 +336,8 @@ function botHandlers(initStore, initStorage) {
     } = context.message.from;
     const userMessageId = context.message.message_id;
     const info = context.message.text;
-    const { questionId, type } = store.getUserState(userId);
+    const questionId = 0;
+    const { type } = store.getQuestionState(userId, questionId);
     switch (type) {
       case STATES.CREATE_HEADER: {
         store.dispatch({
@@ -348,7 +349,7 @@ function botHandlers(initStore, initStorage) {
             userMessageId,
           },
         });
-        const { reply, buttons } = store.getUserState(userId);
+        const { reply, buttons } = store.getQuestionState(userId, questionId);
         clearMessages(context);
         context
           .reply(reply, getExtraReply(buttons))
@@ -367,9 +368,11 @@ function botHandlers(initStore, initStorage) {
       case STATES.CREATE_TEXT: {
         store.dispatch({
           type: ACTIONS.CREATE_TEXT,
-          payload: { userId, text: info.substr(0, 255), userMessageId },
+          payload: {
+            userId, questionId: 0, text: info.substr(0, 255), userMessageId,
+          },
         });
-        const { reply, buttons } = store.getUserState(userId);
+        const { reply, buttons } = store.getQuestionState(userId, questionId);
         clearMessages(context);
         context
           .reply(reply, getExtraReply(buttons))
@@ -391,14 +394,14 @@ function botHandlers(initStore, initStorage) {
           type: ACTIONS.CREATE_OPTION,
           payload: { userId, option, userMessageId },
         });
-        const { reply, buttons } = store.getUserState(userId);
+        const { reply, buttons } = store.getQuestionState(userId, questionId);
         clearMessages(context);
         context
           .reply(reply, getExtraReply(buttons))
           .then((message) => {
             store.dispatch({
               type: ACTIONS.APPEND_MESSAGE_TO_QUEUE,
-              payload: { userId, messageId: message.message_id },
+              payload: { userId, questionId: 0, messageId: message.message_id },
             });
           })
           .catch((error) => {
@@ -407,76 +410,77 @@ function botHandlers(initStore, initStorage) {
         break;
       }
 
-      case STATES.ANSWER: {
-        const { options, optionsSelected } = store.getUserState(userId);
-        const optionIndex = options.findIndex((option) => option.Name === info);
-        // WRONG_ANSWER
-        if (optionIndex === -1) {
-          store.dispatch({
-            type: ACTIONS.GET_WRONG_OPTION,
-            payload: { userId, answer: info },
-          });
-          const { reply, buttons } = store.getUserState(userId);
-          clearMessages(context);
-          context
-            .reply(reply, getExtraReply(buttons))
-            .then((message) => {
-              store.dispatch({
-                type: ACTIONS.APPEND_MESSAGE_TO_QUEUE,
-                payload: { userId, messageId: message.message_id },
-              });
-            })
-            .catch((error) => {
-              console.error(error);
-            });
-          return;
-        }
-        // RIGHT_ANSWER
-        store.dispatch({
-          type: ACTIONS.APPEND_MESSAGE_TO_QUEUE,
-          payload: { userId, messageId: userMessageId },
-        });
-        const selectedOption = options.splice(optionIndex, 1);
-        optionsSelected.push(...selectedOption);
-        if (options.length === 1) {
-          const lastOption = options.pop();
-          optionsSelected.push(lastOption);
-          await storage.saveRanks({
-            userId,
-            optionsSelected,
-            options,
-            userFirstName,
-            userLastName,
-            userName,
-          });
-          await storage.saveStatus({
-            userId,
-            questionId,
-            status: 'ANSWERED',
-            userFirstName,
-            userLastName,
-            userName,
-          });
-        }
-        store.dispatch({
-          type: ACTIONS.GET_OPTION,
-          payload: { userId, options, optionsSelected },
-        });
-        const { reply, buttons } = store.getUserState(userId);
-        clearMessages(context);
-        context
-          .reply(reply, getExtraReply(buttons))
-          .then((message) => {
-            store.dispatch({
-              type: ACTIONS.APPEND_MESSAGE_TO_QUEUE,
-              payload: { userId, messageId: message.message_id },
-            });
-          })
-          .catch((error) => {
-            console.error(error);
-          });
-        break;
-      }
+      // Нужен ли этот раздел при переходе на callback buttons?
+      // case STATES.ANSWER: {
+      //   const { options, optionsSelected } = store.getUserState(userId);
+      //   const optionIndex = options.findIndex((option) => option.Name === info);
+      //   // WRONG_ANSWER
+      //   if (optionIndex === -1) {
+      //     store.dispatch({
+      //       type: ACTIONS.GET_WRONG_OPTION,
+      //       payload: { userId, answer: info },
+      //     });
+      //     const { reply, buttons } = store.getUserState(userId);
+      //     clearMessages(context);
+      //     context
+      //       .reply(reply, getExtraReply(buttons))
+      //       .then((message) => {
+      //         store.dispatch({
+      //           type: ACTIONS.APPEND_MESSAGE_TO_QUEUE,
+      //           payload: { userId, messageId: message.message_id },
+      //         });
+      //       })
+      //       .catch((error) => {
+      //         console.error(error);
+      //       });
+      //     return;
+      //   }
+      //   // RIGHT_ANSWER
+      //   store.dispatch({
+      //     type: ACTIONS.APPEND_MESSAGE_TO_QUEUE,
+      //     payload: { userId, messageId: userMessageId },
+      //   });
+      //   const selectedOption = options.splice(optionIndex, 1);
+      //   optionsSelected.push(...selectedOption);
+      //   if (options.length === 1) {
+      //     const lastOption = options.pop();
+      //     optionsSelected.push(lastOption);
+      //     await storage.saveRanks({
+      //       userId,
+      //       optionsSelected,
+      //       options,
+      //       userFirstName,
+      //       userLastName,
+      //       userName,
+      //     });
+      //     await storage.saveStatus({
+      //       userId,
+      //       questionId,
+      //       status: 'ANSWERED',
+      //       userFirstName,
+      //       userLastName,
+      //       userName,
+      //     });
+      //   }
+      //   store.dispatch({
+      //     type: ACTIONS.GET_OPTION,
+      //     payload: { userId, options, optionsSelected },
+      //   });
+      //   const { reply, buttons } = store.getUserState(userId);
+      //   clearMessages(context);
+      //   context
+      //     .reply(reply, getExtraReply(buttons))
+      //     .then((message) => {
+      //       store.dispatch({
+      //         type: ACTIONS.APPEND_MESSAGE_TO_QUEUE,
+      //         payload: { userId, messageId: message.message_id },
+      //       });
+      //     })
+      //     .catch((error) => {
+      //       console.error(error);
+      //     });
+      //   break;
+      // }
 
       default: {
         store.dispatch({
@@ -592,9 +596,9 @@ function botHandlers(initStore, initStorage) {
               return `${position}. ${name}`;
             });
           const result = optionsResult.reduce((acc, option) => `${acc}\n${option}`, `Опрос <b>${header}</b>\n`
-        + `${text}\n\n`
-        + `Приняли участие (человек): ${votersCount}\n`
-        + 'Результат:');
+            + `${text}\n\n`
+            + `Приняли участие (человек): ${votersCount}\n`
+            + 'Результат:');
           store.dispatch({
             type: ACTIONS.HEARS_RESULTS,
             payload: { userId, questionId, result },
