@@ -79,11 +79,12 @@ function botReducer(state, action) {
 
     case ACTIONS.CREATE_OPTION: {
       const {
-        userId, questionId, option, userMessageId,
+        userId, questionId = 0, option, userMessageId,
       } = action.payload;
-      const options = [...(state[userId][questionId].options || []), option];
-      const defaultReply = `Заголовок: <b>${state[userId][questionId].header}</b>\n`
-        + `Вопрос: ${state[userId][questionId].text}\n`
+      const questionState = (state[userId] === undefined) ? {} : { ...state[userId][questionId] };
+      const options = [...(questionState.options || []), option];
+      const defaultReply = `Заголовок: <b>${questionState.header}</b>\n`
+        + `Вопрос: ${questionState.text}\n`
         + 'Варианты ответов:';
       const reply = options.reduce((acc, item) => `${acc}\n - ${item}`, defaultReply);
       const buttons = (options.length > 1) ? [BUTTONS.DONE, BUTTONS.CANCEL] : [BUTTONS.CANCEL];
@@ -93,8 +94,7 @@ function botReducer(state, action) {
         // id: userId,
         clearMessagesQueue: [...(state[userId].clearMessagesQueue || []), userMessageId],
       };
-      const questionState = (state[userId] === undefined) ? {} : { ...state[userId][0] };
-      newState[userId][0] = {
+      newState[userId][questionId] = {
         ...questionState,
         type: STATES.CREATE_OPTION,
         options,
@@ -110,15 +110,16 @@ function botReducer(state, action) {
         questionId,
         header,
         text,
-        options,
+        options = [],
       } = action.payload;
       const reply = `<b>${header}</b>\n${text}`;
-      const buttons = [
-        ...options.map((option) => option.Name),
-        BUTTONS.HINT,
-        BUTTONS.CANCEL,
-        BUTTONS.SKIP,
-      ];
+      // const buttons = [
+      //   ...options.map((option) => option.Name),
+      //   BUTTONS.HINT,
+      //   BUTTONS.CANCEL,
+      //   BUTTONS.SKIP,
+      // ];
+      const buttons = [...options, BUTTONS.HINT, BUTTONS.CANCEL, BUTTONS.SKIP];
       newState[userId] = { ...state[userId] };
       const questionState = (state[userId] === undefined) ? {} : { ...state[userId][questionId] };
       newState[userId][questionId] = {
@@ -141,21 +142,21 @@ function botReducer(state, action) {
         options,
         optionsSelected,
       } = action.payload;
-      const { header, text } = state[userId];
+      const { header, text } = state[userId][questionId];
       let reply;
       let buttons;
       if (options.length === 0) {
         reply = `Вы завершили опрос <b>${header}</b> \nВаш выбор:`;
         optionsSelected.forEach((option, index) => {
-          reply += `\n${index + 1}. ${option.Name}`;
+          reply += `\n${index + 1}. ${option.name}`;
         });
         buttons = [BUTTONS.RESULTS];
       } else {
         reply = `<b>${header}</b>\n${text}\nВы уже выбрали:`;
         optionsSelected.forEach((option, index) => {
-          reply += `\n${index + 1}. ${option.Name}`;
+          reply += `\n${index + 1}. ${option.name}`;
         });
-        buttons = [...options.map((option) => option.Name), BUTTONS.HINT, BUTTONS.CANCEL];
+        buttons = [...options, BUTTONS.HINT, BUTTONS.CANCEL];
         if (optionsSelected.length > 0) buttons.push(BUTTONS.COMPLETE);
         buttons.push(BUTTONS.SKIP);
       }

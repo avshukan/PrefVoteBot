@@ -219,10 +219,12 @@ function createDBStorage() {
       return {
         header: questionRow[0].Header,
         text: questionRow[0].Text,
-        options: optionsRows,
+        options: optionsRows.map(
+          ({ Id, QuestionId, Name }) => ({ id: Id, questionId: QuestionId, name: Name }),
+        ),
       };
     } catch (e) {
-      return e;
+      return { e };
     }
   }
 
@@ -283,8 +285,8 @@ function createDBStorage() {
       ]];
       const result = await storagePool.query(sql, data);
       return result;
-    } catch (e) {
-      return e;
+    } catch (error) {
+      return { error };
     }
   }
 
