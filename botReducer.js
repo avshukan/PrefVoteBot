@@ -13,11 +13,7 @@ function botReducer(state, action) {
   switch (action.type) {
     case ACTIONS.CREATE_VOTE: {
       const { userId } = action.payload;
-      newState[userId] = {
-        ...state[userId],
-        // userId,
-        // id: userId,
-      };
+      newState[userId] = {        ...state[userId]      };
       const questionState = (state[userId] === undefined) ? {} : { ...state[userId][0] };
       newState[userId][0] = {
         ...questionState,
@@ -90,8 +86,6 @@ function botReducer(state, action) {
       const buttons = (options.length > 1) ? [BUTTONS.DONE, BUTTONS.CANCEL] : [BUTTONS.CANCEL];
       newState[userId] = {
         ...state[userId],
-        // userId,
-        // id: userId,
         clearMessagesQueue: [...(state[userId].clearMessagesQueue || []), userMessageId],
       };
       newState[userId][questionId] = {

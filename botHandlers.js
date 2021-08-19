@@ -56,7 +56,8 @@ function botHandlers(initStore, initStorage) {
       payload: { userId },
     });
     const { reply, buttons } = store.getQuestionState(userId, questionId);
-    context.reply(reply, getExtraReply(buttons));
+    context.reply(reply, getInlineReply(buttons));
+    // context.reply(reply, getExtraReply(buttons));
   }
 
   async function hearsCompleteHandler(context) {
@@ -100,7 +101,8 @@ function botHandlers(initStore, initStorage) {
       const { reply, buttons } = store.getQuestionState(userId, questionId);
       clearMessages(context);
       context
-        .reply(reply, getExtraReply(buttons))
+        .reply(reply, getInlineReply(buttons))
+        // .reply(reply, getExtraReply(buttons))
         .then((message) => {
           store.dispatch({
             type: ACTIONS.APPEND_MESSAGE_TO_QUEUE,
@@ -116,7 +118,8 @@ function botHandlers(initStore, initStorage) {
         payload: { userId, questionId },
       });
       const { reply, buttons } = store.getQuestionState(userId, questionId);
-      context.reply(reply, getExtraReply(buttons));
+      context.reply(reply, getInlineReply(buttons));
+      // context.reply(reply, getExtraReply(buttons));
     }
   }
 
@@ -139,9 +142,9 @@ function botHandlers(initStore, initStorage) {
           userId, questionId, header, text, options,
         },
       });
+      const { reply, buttons } = store.getQuestionState(userId, questionId);
       const userState = store.getUserState(userId);
       userState[0] = {};
-      const { reply, buttons } = store.getQuestionState(userId, questionId);
       context.reply(reply, getExtraReply(buttons));
     } catch (error) {
       console.error(error);
@@ -149,8 +152,9 @@ function botHandlers(initStore, initStorage) {
         type: ACTIONS.ERROR,
         payload: { userId },
       });
-      const { reply, buttons } = store.getQuestionState(userId, questionId);
-      context.reply(reply, getExtraReply(buttons));
+      const { reply, buttons } = store.getQuestionState(userId);
+      context.reply(reply, getInlineReply(buttons));
+      // context.reply(reply, getExtraReply(buttons));
     }
   }
 
@@ -187,7 +191,8 @@ function botHandlers(initStore, initStorage) {
         payload: { userId },
       });
       const { reply, buttons } = store.getQuestionState(userId, questionId);
-      context.reply(reply, getExtraReply(buttons));
+      context.reply(reply, getInlineReply(buttons));
+      // context.reply(reply, getExtraReply(buttons));
     }
   }
 
@@ -198,7 +203,8 @@ function botHandlers(initStore, initStorage) {
       payload: { userId },
     });
     const { reply, buttons } = store.getUserState(userId);
-    context.reply(reply, getExtraReply(buttons));
+    context.reply(reply, getInlineReply(buttons));
+    // context.reply(reply, getExtraReply(buttons));
   }
 
   async function commandCreatedByMeHandler(context) {
@@ -210,7 +216,8 @@ function botHandlers(initStore, initStorage) {
         payload: { userId, questions, command: COMMANDS.CREATEDBYME },
       });
       const { reply, buttons } = store.getUserState(userId);
-      context.reply(reply, getExtraReply(buttons));
+      context.reply(reply, getInlineReply(buttons));
+      // context.reply(reply, getExtraReply(buttons));
     } catch (error) {
       console.error(error);
       store.dispatch({
@@ -218,7 +225,8 @@ function botHandlers(initStore, initStorage) {
         payload: { userId },
       });
       const { reply, buttons } = store.getUserState(userId);
-      context.reply(reply, getExtraReply(buttons));
+      context.reply(reply, getInlineReply(buttons));
+      // context.reply(reply, getExtraReply(buttons));
     }
   }
 
@@ -231,7 +239,8 @@ function botHandlers(initStore, initStorage) {
         payload: { userId, questions, command: COMMANDS.VOTEDBYME },
       });
       const { reply, buttons } = store.getUserState(userId);
-      context.reply(reply, getExtraReply(buttons));
+      context.reply(reply, getInlineReply(buttons));
+      // context.reply(reply, getExtraReply(buttons));
     } catch (error) {
       console.error(error);
       store.dispatch({
@@ -239,7 +248,8 @@ function botHandlers(initStore, initStorage) {
         payload: { userId },
       });
       const { reply, buttons } = store.getUserState(userId);
-      context.reply(reply, getExtraReply(buttons));
+      context.reply(reply, getInlineReply(buttons));
+      // context.reply(reply, getExtraReply(buttons));
     }
   }
 
@@ -255,7 +265,8 @@ function botHandlers(initStore, initStorage) {
         payload: { userId, questions, command: COMMANDS.FIND },
       });
       const { reply, buttons } = store.getUserState(userId);
-      context.reply(reply, getExtraReply(buttons));
+      context.reply(reply, getInlineReply(buttons));
+      // context.reply(reply, getExtraReply(buttons));
     } catch (error) {
       console.error(error);
       store.dispatch({
@@ -263,7 +274,8 @@ function botHandlers(initStore, initStorage) {
         payload: { userId, error },
       });
       const { reply, buttons } = store.getUserState(userId);
-      context.reply(reply, getExtraReply(buttons));
+      context.reply(reply, getInlineReply(buttons));
+      // context.reply(reply, getExtraReply(buttons));
     }
   }
 
@@ -274,7 +286,8 @@ function botHandlers(initStore, initStorage) {
       payload: { userId },
     });
     const { reply, buttons } = store.getUserState(userId);
-    context.reply(reply, getExtraReply(buttons));
+    context.reply(reply, getInlineReply(buttons));
+    // context.reply(reply, getExtraReply(buttons));
   }
 
   async function commandPopularHandler(context) {
@@ -286,7 +299,8 @@ function botHandlers(initStore, initStorage) {
         payload: { userId, questions, command: COMMANDS.POPULAR },
       });
       const { reply, buttons } = store.getUserState(userId);
-      context.reply(reply, getExtraReply(buttons));
+      context.reply(reply, getInlineReply(buttons));
+      // context.reply(reply, getExtraReply(buttons));
     } catch (error) {
       console.error(error);
       store.dispatch({
@@ -294,7 +308,8 @@ function botHandlers(initStore, initStorage) {
         payload: { userId },
       });
       const { reply, buttons } = store.getUserState(userId);
-      context.reply(reply, getExtraReply(buttons));
+      context.reply(reply, getInlineReply(buttons));
+      // context.reply(reply, getExtraReply(buttons));
     }
   }
 
@@ -305,7 +320,8 @@ function botHandlers(initStore, initStorage) {
       payload: { userId },
     });
     const { reply, buttons } = store.getUserState(userId);
-    context.reply(reply, getExtraReply(buttons));
+    context.reply(reply, getInlineReply(buttons));
+    // context.reply(reply, getExtraReply(buttons));
   }
 
   async function launchQuestion(context, userId, questionId) {
@@ -334,7 +350,8 @@ function botHandlers(initStore, initStorage) {
         payload: { userId, questionId, error: e },
       });
       const { reply, buttons } = store.getQuestionState(userId, questionId);
-      context.reply(reply, getExtraReply(buttons));
+      context.reply(reply, getInlineReply(buttons));
+      // context.reply(reply, getExtraReply(buttons));
     } else {
       store.dispatch({
         type: ACTIONS.CAST_VOTE,
@@ -376,7 +393,6 @@ function botHandlers(initStore, initStorage) {
         });
         const { reply, buttons } = store.getQuestionState(userId, questionId);
         clearMessages(context);
-        console.log('!!!', reply, getExtraReply(buttons));
         context
           .reply(reply, getInlineReply(buttons))
           // .reply(reply, getExtraReply(buttons))
@@ -403,7 +419,8 @@ function botHandlers(initStore, initStorage) {
         const { reply, buttons } = store.getQuestionState(userId, questionId);
         clearMessages(context);
         context
-          .reply(reply, getExtraReply(buttons))
+          .reply(reply, getInlineReply(buttons))
+          // .reply(reply, getExtraReply(buttons))
           .then((message) => {
             store.dispatch({
               type: ACTIONS.APPEND_MESSAGE_TO_QUEUE,
@@ -425,7 +442,8 @@ function botHandlers(initStore, initStorage) {
         const { reply, buttons } = store.getQuestionState(userId, questionId);
         clearMessages(context);
         context
-          .reply(reply, getExtraReply(buttons))
+          .reply(reply, getInlineReply(buttons))
+          // .reply(reply, getExtraReply(buttons))
           .then((message) => {
             store.dispatch({
               type: ACTIONS.APPEND_MESSAGE_TO_QUEUE,
@@ -516,7 +534,8 @@ function botHandlers(initStore, initStorage) {
           payload: { userId },
         });
         const { reply, buttons } = store.getUserState(userId);
-        context.reply(reply, getExtraReply(buttons));
+        context.reply(reply, getInlineReply(buttons));
+        // context.reply(reply, getExtraReply(buttons));
       }
     }
   }
@@ -645,7 +664,8 @@ function botHandlers(initStore, initStorage) {
             payload: { userId },
           });
           const { reply, buttons } = store.getQuestionState(userId, questionId);
-          context.reply(reply, getExtraReply(buttons));
+          context.reply(reply, getInlineReply(buttons));
+          // context.reply(reply, getExtraReply(buttons));
         }
         break;
       }
@@ -722,9 +742,7 @@ function botHandlers(initStore, initStorage) {
         });
         const { reply, buttons } = store.getQuestionState(userId, questionId);
         console.log(reply, buttons);
-        const x = getInlineReply(questionId, buttons);
-        // console.log('x+', x.reply_markup.inline_keyboard);
-        context.editMessageText(reply, x);
+        context.editMessageText(reply, getInlineReply(questionId, buttons));
       }
     }
   }
@@ -755,7 +773,8 @@ function botHandlers(initStore, initStorage) {
         payload: { userId },
       });
       const { reply, buttons } = store.getUserState(userId);
-      context.reply(reply, getExtraReply(buttons));
+      context.reply(reply, getInlineReply(buttons));
+      // context.reply(reply, getExtraReply(buttons));
     }
   }
 
