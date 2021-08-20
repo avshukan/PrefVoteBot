@@ -32,17 +32,16 @@ function botHandlers(initStore, initStorage) {
     console.log('{ reply, buttons }');
     console.log({ reply, buttons });
     context
-      // .reply(reply, getExtraReply(buttons))
-      .reply(reply, getInlineReply(questionId, buttons));
-    // .then((message) => {
-    //   store.dispatch({
-    //     type: ACTIONS.APPEND_MESSAGE_TO_QUEUE,
-    //     payload: { userId, messageId: message.message_id },
-    //   });
-    // })
-    // .catch((error) => {
-    //   console.error(error);
-    // });
+      .reply(reply, getInlineReply(buttons, questionId))
+      .then((message) => {
+        store.dispatch({
+          type: ACTIONS.APPEND_MESSAGE_TO_QUEUE,
+          payload: { userId, messageId: message.message_id },
+        });
+      })
+      .catch((error) => {
+        console.error(error);
+      });
   }
 
   function hearsCancelHandler(context) {
@@ -56,8 +55,7 @@ function botHandlers(initStore, initStorage) {
       payload: { userId },
     });
     const { reply, buttons } = store.getQuestionState(userId, questionId);
-    context.reply(reply, getInlineReply(buttons));
-    // context.reply(reply, getExtraReply(buttons));
+    context.reply(reply, getInlineReply(buttons, questionId));
   }
 
   async function hearsCompleteHandler(context) {
@@ -101,8 +99,7 @@ function botHandlers(initStore, initStorage) {
       const { reply, buttons } = store.getQuestionState(userId, questionId);
       clearMessages(context);
       context
-        .reply(reply, getInlineReply(buttons))
-        // .reply(reply, getExtraReply(buttons))
+        .reply(reply, getInlineReply(buttons, questionId))
         .then((message) => {
           store.dispatch({
             type: ACTIONS.APPEND_MESSAGE_TO_QUEUE,
@@ -118,8 +115,7 @@ function botHandlers(initStore, initStorage) {
         payload: { userId, questionId },
       });
       const { reply, buttons } = store.getQuestionState(userId, questionId);
-      context.reply(reply, getInlineReply(buttons));
-      // context.reply(reply, getExtraReply(buttons));
+      context.reply(reply, getInlineReply(buttons, questionId));
     }
   }
 
@@ -154,7 +150,6 @@ function botHandlers(initStore, initStorage) {
       });
       const { reply, buttons } = store.getQuestionState(userId);
       context.reply(reply, getInlineReply(buttons));
-      // context.reply(reply, getExtraReply(buttons));
     }
   }
 
@@ -191,8 +186,7 @@ function botHandlers(initStore, initStorage) {
         payload: { userId },
       });
       const { reply, buttons } = store.getQuestionState(userId, questionId);
-      context.reply(reply, getInlineReply(buttons));
-      // context.reply(reply, getExtraReply(buttons));
+      context.reply(reply, getInlineReply(buttons, questionId));
     }
   }
 
@@ -204,7 +198,6 @@ function botHandlers(initStore, initStorage) {
     });
     const { reply, buttons } = store.getUserState(userId);
     context.reply(reply, getInlineReply(buttons));
-    // context.reply(reply, getExtraReply(buttons));
   }
 
   async function commandCreatedByMeHandler(context) {
@@ -217,7 +210,6 @@ function botHandlers(initStore, initStorage) {
       });
       const { reply, buttons } = store.getUserState(userId);
       context.reply(reply, getInlineReply(buttons));
-      // context.reply(reply, getExtraReply(buttons));
     } catch (error) {
       console.error(error);
       store.dispatch({
@@ -226,7 +218,6 @@ function botHandlers(initStore, initStorage) {
       });
       const { reply, buttons } = store.getUserState(userId);
       context.reply(reply, getInlineReply(buttons));
-      // context.reply(reply, getExtraReply(buttons));
     }
   }
 
@@ -240,7 +231,6 @@ function botHandlers(initStore, initStorage) {
       });
       const { reply, buttons } = store.getUserState(userId);
       context.reply(reply, getInlineReply(buttons));
-      // context.reply(reply, getExtraReply(buttons));
     } catch (error) {
       console.error(error);
       store.dispatch({
@@ -249,7 +239,6 @@ function botHandlers(initStore, initStorage) {
       });
       const { reply, buttons } = store.getUserState(userId);
       context.reply(reply, getInlineReply(buttons));
-      // context.reply(reply, getExtraReply(buttons));
     }
   }
 
@@ -266,7 +255,6 @@ function botHandlers(initStore, initStorage) {
       });
       const { reply, buttons } = store.getUserState(userId);
       context.reply(reply, getInlineReply(buttons));
-      // context.reply(reply, getExtraReply(buttons));
     } catch (error) {
       console.error(error);
       store.dispatch({
@@ -275,7 +263,6 @@ function botHandlers(initStore, initStorage) {
       });
       const { reply, buttons } = store.getUserState(userId);
       context.reply(reply, getInlineReply(buttons));
-      // context.reply(reply, getExtraReply(buttons));
     }
   }
 
@@ -287,7 +274,6 @@ function botHandlers(initStore, initStorage) {
     });
     const { reply, buttons } = store.getUserState(userId);
     context.reply(reply, getInlineReply(buttons));
-    // context.reply(reply, getExtraReply(buttons));
   }
 
   async function commandPopularHandler(context) {
@@ -300,7 +286,6 @@ function botHandlers(initStore, initStorage) {
       });
       const { reply, buttons } = store.getUserState(userId);
       context.reply(reply, getInlineReply(buttons));
-      // context.reply(reply, getExtraReply(buttons));
     } catch (error) {
       console.error(error);
       store.dispatch({
@@ -309,7 +294,6 @@ function botHandlers(initStore, initStorage) {
       });
       const { reply, buttons } = store.getUserState(userId);
       context.reply(reply, getInlineReply(buttons));
-      // context.reply(reply, getExtraReply(buttons));
     }
   }
 
@@ -321,7 +305,6 @@ function botHandlers(initStore, initStorage) {
     });
     const { reply, buttons } = store.getUserState(userId);
     context.reply(reply, getInlineReply(buttons));
-    // context.reply(reply, getExtraReply(buttons));
   }
 
   async function launchQuestion(context, userId, questionId) {
@@ -333,7 +316,7 @@ function botHandlers(initStore, initStorage) {
       });
       await hearsResultsHandler(context, userId, questionId);
       const { reply, buttons } = store.getQuestionState(userId, questionId);
-      context.reply(reply, getInlineReply(questionId, buttons));
+      context.reply(reply, getInlineReply(buttons, questionId));
       return;
     }
     // NOT ANSWERED
@@ -350,8 +333,7 @@ function botHandlers(initStore, initStorage) {
         payload: { userId, questionId, error: e },
       });
       const { reply, buttons } = store.getQuestionState(userId, questionId);
-      context.reply(reply, getInlineReply(buttons));
-      // context.reply(reply, getExtraReply(buttons));
+      context.reply(reply, getInlineReply(buttons, questionId));
     } else {
       store.dispatch({
         type: ACTIONS.CAST_VOTE,
@@ -365,7 +347,7 @@ function botHandlers(initStore, initStorage) {
       });
       const { reply, buttons } = store.getQuestionState(userId, questionId);
       console.log('{ reply, buttons }', { reply, buttons });
-      context.reply(reply, getInlineReply(questionId, buttons));
+      context.reply(reply, getInlineReply(buttons, questionId));
     }
   }
 
@@ -394,8 +376,7 @@ function botHandlers(initStore, initStorage) {
         const { reply, buttons } = store.getQuestionState(userId, questionId);
         clearMessages(context);
         context
-          .reply(reply, getInlineReply(buttons))
-          // .reply(reply, getExtraReply(buttons))
+          .reply(reply, getInlineReply(buttons, questionId))
           .then((message) => {
             console.log({ payload: { userId, messageId: message.message_id } });
             store.dispatch({
@@ -419,8 +400,7 @@ function botHandlers(initStore, initStorage) {
         const { reply, buttons } = store.getQuestionState(userId, questionId);
         clearMessages(context);
         context
-          .reply(reply, getInlineReply(buttons))
-          // .reply(reply, getExtraReply(buttons))
+          .reply(reply, getInlineReply(buttons, questionId))
           .then((message) => {
             store.dispatch({
               type: ACTIONS.APPEND_MESSAGE_TO_QUEUE,
@@ -442,8 +422,7 @@ function botHandlers(initStore, initStorage) {
         const { reply, buttons } = store.getQuestionState(userId, questionId);
         clearMessages(context);
         context
-          .reply(reply, getInlineReply(buttons))
-          // .reply(reply, getExtraReply(buttons))
+          .reply(reply, getInlineReply(buttons, questionId))
           .then((message) => {
             store.dispatch({
               type: ACTIONS.APPEND_MESSAGE_TO_QUEUE,
@@ -534,8 +513,7 @@ function botHandlers(initStore, initStorage) {
           payload: { userId },
         });
         const { reply, buttons } = store.getUserState(userId);
-        context.reply(reply, getInlineReply(buttons));
-        // context.reply(reply, getExtraReply(buttons));
+        context.reply(reply, getInlineReply(buttons, questionId));
       }
     }
   }
@@ -605,7 +583,7 @@ function botHandlers(initStore, initStorage) {
           payload: { userId, questionId },
         });
         const { reply, buttons } = store.getQuestionState(userId, questionId);
-        context.editMessageText(reply, getInlineReply(questionId, buttons));
+        context.editMessageText(reply, getInlineReply(buttons, questionId));
         break;
       }
       case BUTTONS.SKIP_ABORT.link: {
@@ -627,7 +605,7 @@ function botHandlers(initStore, initStorage) {
         });
         await hearsResultsHandler(context, userId, questionId);
         const { reply, buttons } = store.getQuestionState(userId, questionId);
-        context.editMessageText(reply, getInlineReply(questionId, buttons));
+        context.editMessageText(reply, getInlineReply(buttons, questionId));
         break;
       }
       case BUTTONS.RESULTS.link: {
@@ -656,7 +634,7 @@ function botHandlers(initStore, initStorage) {
             payload: { userId, questionId, result },
           });
           const { reply, buttons } = store.getUserState(userId);
-          context.editMessageText(reply, getInlineReply(questionId, buttons));
+          context.editMessageText(reply, getInlineReply(buttons, questionId));
         } catch (error) {
           console.error(error);
           store.dispatch({
@@ -664,8 +642,7 @@ function botHandlers(initStore, initStorage) {
             payload: { userId },
           });
           const { reply, buttons } = store.getQuestionState(userId, questionId);
-          context.reply(reply, getInlineReply(buttons));
-          // context.reply(reply, getExtraReply(buttons));
+          context.reply(reply, getInlineReply(buttons, questionId));
         }
         break;
       }
@@ -691,7 +668,7 @@ function botHandlers(initStore, initStorage) {
           payload: { userId, options, optionsSelected },
         });
         const { reply, buttons } = store.getQuestionState(userId, questionId);
-        context.editMessageText(reply, getInlineReply(questionId, buttons));
+        context.editMessageText(reply, getInlineReply(buttons, questionId));
         break;
       }
       case BUTTONS.HINT.link: {
@@ -708,7 +685,7 @@ function botHandlers(initStore, initStorage) {
           payload: { userId, questionId },
         });
         const { reply, buttons } = store.getQuestionState(userId, questionId);
-        context.editMessageText(reply, getInlineReply(questionId, buttons));
+        context.editMessageText(reply, getInlineReply(buttons, questionId));
         break;
       }
       default: {
@@ -742,7 +719,7 @@ function botHandlers(initStore, initStorage) {
         });
         const { reply, buttons } = store.getQuestionState(userId, questionId);
         console.log(reply, buttons);
-        context.editMessageText(reply, getInlineReply(questionId, buttons));
+        context.editMessageText(reply, getInlineReply(buttons, questionId));
       }
     }
   }
@@ -774,7 +751,6 @@ function botHandlers(initStore, initStorage) {
       });
       const { reply, buttons } = store.getUserState(userId);
       context.reply(reply, getInlineReply(buttons));
-      // context.reply(reply, getExtraReply(buttons));
     }
   }
 

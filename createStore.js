@@ -5,7 +5,7 @@ function createStore(storeReducer, storeState = {}) {
 
   function dispatch(action) {
     console.log('state', state);
-    console.log('state[149938780][0][buttons]', state && state[149938780] && state[149938780][0] && state[149938780][0]['buttons']);
+    console.log('state[149938780][0][buttons]', state && state[149938780] && state[149938780][0] && state[149938780][0].buttons);
     console.log('action', action);
     state = storeReducer(state, action);
     return state;

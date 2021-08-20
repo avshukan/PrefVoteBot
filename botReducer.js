@@ -13,7 +13,7 @@ function botReducer(state, action) {
   switch (action.type) {
     case ACTIONS.CREATE_VOTE: {
       const { userId } = action.payload;
-      newState[userId] = {        ...state[userId]      };
+      newState[userId] = { ...state[userId] };
       const questionState = (state[userId] === undefined) ? {} : { ...state[userId][0] };
       newState[userId][0] = {
         ...questionState,

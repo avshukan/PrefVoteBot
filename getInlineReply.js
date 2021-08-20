@@ -1,26 +1,10 @@
-const utf8 = require('utf8');
 const { Markup } = require('telegraf');
 const { BUTTONS } = require('./button_types');
 
 const COLUMNS = 3;
 
-function getInlineReply(questionId, buttons) {
+function getInlineReply(buttons, questionId = 0) {
   if (!Array.isArray(buttons) || buttons.length === 0) return { parse_mode: 'HTML' };
-
-  buttons.forEach((button) => {
-    console.log(JSON.stringify({ questionId, button }));
-    console.log(JSON.stringify({ questionId, button }).length);
-    console.log(utf8.encode(JSON.stringify({ questionId, button })));
-    console.log(utf8.encode(JSON.stringify({ questionId, button })).length);
-  });
-  // const inlineButtons = buttons.map((button) => {
-  //   if (button.Id && button.Name) {
-  //     return { text: button.Name, data: JSON.stringify({ questionId, answerId: button.Id }) };
-  //   }
-  //   return { text: button.text, data: JSON.stringify({ questionId, link: button.link }) };
-  // });
-  // console.log('inlineButtons', inlineButtons);
-
   const inlineReply = Markup.inlineKeyboard(
     buttons.map((button) => {
       const data = { questionId };

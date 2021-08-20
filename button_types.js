@@ -1,9 +1,9 @@
 const BUTTONS = {
-  DONE: {link: 'DONE', name:'✔️ Сохранить'},
+  DONE: { link: 'DONE', name: '✔️ Сохранить' },
   COMPLETE: { link: 'COMPLETE', name: '✔️ Завершить опрос' },
   CANCEL: { link: 'CANCEL', name: '❌ Отменить' },
-  RESULTS:{link:  'RESULTS', name: '👁 Показать результаты'},
-  RESULTS_MINE: {link: 'RESULTS_MINE', name: '👁 Показать мой ответ'},
+  RESULTS: { link: 'RESULTS', name: '👁 Показать результаты' },
+  RESULTS_MINE: { link: 'RESULTS_MINE', name: '👁 Показать мой ответ' },
   HINT: { link: 'HINT', name: '❓ Подсказка' },
   SKIP: { link: 'SKIP', name: 'Пропустить опрос' },
   SKIP_APPROVE: { link: 'SKIP_APPROVE', name: 'Перейти к результатам' },
