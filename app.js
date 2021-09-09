@@ -39,7 +39,7 @@ bot.command(COMMANDS.SETTINGS, handlers.commandSettingsHandler);
 bot.command(COMMANDS.VOTEDBYME, handlers.commandVotedByMeHandler);
 // bot.hears(BUTTONS.CANCEL, handlers.hearsCancelHandler);
 bot.hears(BUTTONS.COMPLETE.name, handlers.hearsCompleteHandler);
-bot.hears(BUTTONS.DONE.name, handlers.hearsDoneHandler);
+// bot.hears(BUTTONS.DONE.name, handlers.hearsDoneHandler);
 bot.hears(BUTTONS.RESULTS.name, handlers.hearsResultsHandler);
 bot.on('text', handlers.onTextHandler);
 

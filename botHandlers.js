@@ -125,9 +125,8 @@ function botHandlers(initStore, initStorage) {
       first_name: userFirstName,
       last_name: userLastName,
       username: userName,
-    } = context.message.from;
+    } = context.update.callback_query.from;
     try {
-      // const { header, text, options } = store.getUserState(userId);
       const { header, text, options } = store.getQuestionState(userId);
       const questionId = await storage.saveQuestionWithOptions({
         userId, header, text, options, userFirstName, userLastName, userName,
@@ -354,9 +353,9 @@ function botHandlers(initStore, initStorage) {
   async function onTextHandler(context) {
     const {
       id: userId,
-      first_name: userFirstName,
-      last_name: userLastName,
-      username: userName,
+      // first_name: userFirstName,
+      // last_name: userLastName,
+      // username: userName,
     } = context.message.from;
     const userMessageId = context.message.message_id;
     const info = context.message.text;
@@ -546,7 +545,10 @@ function botHandlers(initStore, initStorage) {
     console.log('button', link);
     switch (link) {
       case BUTTONS.NEW.link:
-      case BUTTONS.DONE.link:
+      case BUTTONS.DONE.link: {
+        await hearsDoneHandler(context);
+        break;
+      }
       case BUTTONS.RESULTS_MINE.link: {
         context.answerCbQuery();
         const rows = await storage.getAnswersByUser(questionId, userId);

@@ -1,4 +1,4 @@
-const { STATES } = require('./state_types');
+// const { STATES } = require('./state_types');
 
 function createStore(storeReducer, storeState = {}) {
   let state = storeState;
