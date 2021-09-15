@@ -94,7 +94,7 @@ function botHandlers(initStore, initStorage) {
       });
       store.dispatch({
         type: ACTIONS.HEARS_COMPLETE,
-        payload: { userId, options, optionsSelected },
+        payload: { userId, questionId, options, optionsSelected },
       });
       const { reply, buttons } = store.getQuestionState(userId, questionId);
       clearMessages(context);
@@ -667,7 +667,7 @@ function botHandlers(initStore, initStorage) {
         });
         store.dispatch({
           type: ACTIONS.HEARS_COMPLETE,
-          payload: { userId, options, optionsSelected },
+          payload: { userId, questionId, options, optionsSelected },
         });
         const { reply, buttons } = store.getQuestionState(userId, questionId);
         context.editMessageText(reply, getInlineReply(buttons, questionId));

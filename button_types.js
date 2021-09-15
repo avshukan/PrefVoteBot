@@ -1,6 +1,6 @@
 const BUTTONS = {
   DONE: { link: 'DONE', name: '✔️ Сохранить' },
-  COMPLETE: { link: 'COMPLETE', name: '✔️ Завершить опрос' },
+  COMPLETE: { link: 'COMPLETE', name: '✔️ Завершить' },
   CANCEL: { link: 'CANCEL', name: '❌ Отменить' },
   RESULTS: { link: 'RESULTS', name: '👁 Показать результаты' },
   RESULTS_MINE: { link: 'RESULTS_MINE', name: '👁 Показать мой ответ' },

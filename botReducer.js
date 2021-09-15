@@ -28,7 +28,7 @@ function botReducer(state, action) {
       const {
         userId, questionId, header, userMessageId,
       } = action.payload;
-      const reply = `Заголовок: <b>${header}</b>\n\n`
+      const reply = `Создание опроса\n\nЗаголовок: <b>${header}</b>\n\n`
         + 'Отправьте текст вопроса';
       newState[userId] = {
         ...state[userId],
@@ -52,7 +52,7 @@ function botReducer(state, action) {
       const {
         userId, questionId, text, userMessageId,
       } = action.payload;
-      const reply = `Заголовок: <b>${state[userId][questionId].header}</b>\n`
+      const reply = `Создание опроса\n\nЗаголовок: <b>${state[userId][questionId].header}</b>\n`
         + `Вопрос: ${text}\n\n`
         + 'Отправьте вариант ответа';
       newState[userId] = {
@@ -79,7 +79,7 @@ function botReducer(state, action) {
       } = action.payload;
       const questionState = (state[userId] === undefined) ? {} : { ...state[userId][questionId] };
       const options = [...(questionState.options || []), option];
-      const defaultReply = `Заголовок: <b>${questionState.header}</b>\n`
+      const defaultReply = `Создание опроса\n\nЗаголовок: <b>${questionState.header}</b>\n`
         + `Вопрос: ${questionState.text}\n`
         + 'Варианты ответов:';
       const reply = options.reduce((acc, item) => `${acc}\n - ${item}`, defaultReply);
@@ -242,15 +242,15 @@ function botReducer(state, action) {
         options,
         optionsSelected,
       } = action.payload;
-      const { header } = state[userId];
+      const { header } = state[userId][questionId];
       let reply = `Вы завершили опрос <b>${header}</b> \nВаш выбор:`;
       optionsSelected.forEach((option, index) => {
-        reply += `\n${index + 1}. ${option.Name}`;
+        reply += `\n${index + 1}. ${option.name}`;
       });
       const counterFrom = optionsSelected.length + 1;
       const counterTo = optionsSelected.length + options.length;
       options.forEach((option) => {
-        reply += `\n${counterFrom}-${counterTo}. ${option.Name}`;
+        reply += `\n${counterFrom}-${counterTo}. ${option.name}`;
       });
       const buttons = [BUTTONS.RESULTS];
       newState[userId] = { ...state[userId] };

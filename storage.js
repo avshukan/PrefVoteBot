@@ -32,8 +32,9 @@ function createDBStorage() {
         header: question[0].Header,
         text: question[0].Text,
       };
-    } catch (e) {
-      return e;
+    } catch (error) {
+      console.error(error);
+      return { error };
     }
   }
 
@@ -51,8 +52,9 @@ function createDBStorage() {
       const data = [questionId, userId];
       const [answers] = await storagePool.execute(sql, data);
       return answers;
-    } catch (e) {
-      return e;
+    } catch (error) {
+      console.error(error);
+      return { error };
     }
   }
 
@@ -77,8 +79,9 @@ function createDBStorage() {
       }) => ({
         id: Id, header: Header, text: Text, voters: Voters,
       }));
-    } catch (e) {
-      return e;
+    } catch (error) {
+      console.error(error);
+      return { error };
     }
   }
 
@@ -105,8 +108,9 @@ function createDBStorage() {
       }) => ({
         id: Id, header: Header, text: Text, voters: Voters,
       }));
-    } catch (e) {
-      return e;
+    } catch (error) {
+      console.error(error);
+      return { error };
     }
   }
 
@@ -132,8 +136,9 @@ function createDBStorage() {
       }) => ({
         id: Id, header: Header, text: Text, voters: Voters,
       }));
-    } catch (e) {
-      return e;
+    } catch (error) {
+      console.error(error);
+      return { error };
     }
   }
 
@@ -145,8 +150,9 @@ function createDBStorage() {
       const [rows] = result;
       if (rows.length === 0) { return null; }
       return rows[0].Status;
-    } catch (e) {
-      return e;
+    } catch (error) {
+      console.error(error);
+      return { error };
     }
   }
 
@@ -172,8 +178,9 @@ function createDBStorage() {
       }) => ({
         id: Id, header: Header, text: Text, voters: Voters,
       }));
-    } catch (e) {
-      return e;
+    } catch (error) {
+      console.error(error);
+      return { error };
     }
   }
 
@@ -193,8 +200,9 @@ function createDBStorage() {
       const [questions] = await storagePool.execute(sql, data);
       const questionId = questions[0].Id;
       return questionId;
-    } catch (e) {
-      return e;
+    } catch (error) {
+      console.error(error);
+      return { error };
     }
   }
 
@@ -204,8 +212,9 @@ function createDBStorage() {
       const data = [questionId];
       const [options] = await storagePool.execute(sql, data);
       return options;
-    } catch (e) {
-      return e;
+    } catch (error) {
+      console.error(error);
+      return { error };
     }
   }
 
@@ -223,8 +232,9 @@ function createDBStorage() {
           ({ Id, QuestionId, Name }) => ({ id: Id, questionId: QuestionId, name: Name }),
         ),
       };
-    } catch (e) {
-      return { e };
+    } catch (error) {
+      console.error(error);
+      return { error };
     }
   }
 
@@ -234,8 +244,9 @@ function createDBStorage() {
       const data = [questionId];
       const [result] = await storagePool.execute(sql, data);
       return { votersCount: result[0].VotersCount };
-    } catch (e) {
-      return e;
+    } catch (error) {
+      console.error(error);
+      return { error };
     }
   }
 
@@ -262,8 +273,9 @@ function createDBStorage() {
       const data = [questionId, questionId];
       const [ranks] = await storagePool.query(sql, data);
       return ranks;
-    } catch (e) {
-      return e;
+    } catch (error) {
+      console.error(error);
+      return { error };
     }
   }
 
@@ -277,15 +289,16 @@ function createDBStorage() {
       const unselectedIndex = optionsSelected.length + 1;
       const data = [[
         ...optionsSelected.map((item, index) => [
-          item.QuestionId, item.Id, index + 1, userId, userFirstName, userLastName, userName,
+          item.questionId, item.id, index + 1, userId, userFirstName, userLastName, userName,
         ]),
         ...options.map((item) => [
-          item.QuestionId, item.Id, unselectedIndex, userId, userFirstName, userLastName, userName,
+          item.questionId, item.id, unselectedIndex, userId, userFirstName, userLastName, userName,
         ]),
       ]];
       const result = await storagePool.query(sql, data);
       return result;
     } catch (error) {
+      console.error(error);
       return { error };
     }
   }
@@ -300,8 +313,9 @@ function createDBStorage() {
       const data = [questionId, userId, status, userFirstName, userLastName, userName];
       const result = await storagePool.query(sql, data);
       return result;
-    } catch (e) {
-      return e;
+    } catch (error) {
+      console.error(error);
+      return { error };
     }
   }
 
@@ -319,8 +333,9 @@ function createDBStorage() {
       const optionsData = [options.map((element) => [questionId, element])];
       await storagePool.query(optionsSQL, optionsData);
       return questionId;
-    } catch (e) {
-      return e;
+    } catch (error) {
+      console.error(error);
+      return { error };
     }
   }
 

@@ -18,8 +18,6 @@ function createStore(storeReducer, storeState = {}) {
   function getUserState(userId) {
     if (!state[userId]) {
       return {
-        // userId,
-        // type: STATES.DEFAULT,
         clearMessagesQueue: [],
       };
     }
